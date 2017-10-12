@@ -1,3 +1,5 @@
+// tested on MSVC2013/2017 and GCC7.2
+
 #include <array>
 #include <functional>
 #include <streambuf>
