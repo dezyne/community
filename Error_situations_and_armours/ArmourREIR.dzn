@@ -1,0 +1,104 @@
+/* armouring at the requires side (interface IStrict)
+ * create a robust copy of the requires interface IRobust
+ * create an armouring component Armour
+ * 
+ * RangeErrorInRequiresReply_
+ * the reply of a requires interface event could have a range error
+ * (a mis-mapping between two subints)
+ */
+import Logger.dzn;
+
+subint SubCount {0..2};
+subint AllCount {-1..6}; // should in fact be full integer
+
+interface IStrict
+{
+  in SubCount ia();
+
+  behaviour
+  {
+  	SubCount c=0;
+    on ia: reply(0);
+    on ia: reply(1);
+    on ia: reply(2);
+  }
+}
+
+interface IRobust
+{
+  in AllCount ia();
+
+  behaviour
+  {
+    on ia: reply (-1);	// -1 triggers an error
+    on ia: reply (0);	// 0 is ok behaviour
+  }
+}
+
+component ArmourREIR // IStrict to IRobust
+{
+  provides IStrict pStrict;
+  requires IRobust rRobust;
+  requires injected ILogger iLog;
+  
+  behaviour {
+	AllCount c = 0;
+  
+    on pStrict.ia(): {
+    	c = rRobust.ia();
+    	if (c<0) {
+    		iLog.Log($"Reply value from ia outside range (too small)"$);
+    		reply(0);
+    	}
+    	else if (c>2) {
+    		iLog.Log($"Reply value from ia outside range (too large)"$);
+    		reply (2);
+    	}
+    	else reply(c+0);
+    } // armour on boundary values
+  }
+}
+
+component Dezyne
+{
+  provides IA pp;
+  requires IStrict rStrict;
+
+  behaviour
+  {
+    SubCount i = 0;
+
+    on pp.ia(): i = rStrict.ia(); 
+  }
+}
+
+interface IA
+{
+  in void ia();
+
+  behaviour
+  {
+    on ia: {}
+  }
+}
+
+component Native {
+	provides IRobust pRobust;
+	requires IRobust r;
+}
+
+component ArmouredSystemREIR {
+	provides IA pp;
+	requires IRobust ir;
+	
+	system {
+		Dezyne re;
+		ArmourREIR am;
+		Native n;
+		
+		pp <=> re.pp;
+		re.rStrict <=> am.pStrict;
+		am.rRobust <=> n.pRobust;
+		n.r <=> ir;
+	}
+}

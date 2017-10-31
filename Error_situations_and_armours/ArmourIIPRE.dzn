@@ -1,0 +1,91 @@
+/* armouring at the provides side (interface IStrict)
+ * create a robust copy of the provides interface IRobust
+ * create an armouring component Armour
+ * 
+ * IllegalInProvidesReturnsEnum_
+ * a provided interface may have an illegal in-event with a myEnum return type
+ */
+import Logger.dzn;
+
+enum myEnum {Yes, No};
+
+interface IStrict
+{
+  in myEnum ia();
+  out void oa();
+
+  behaviour
+  {
+    on ia: illegal;
+    on inevitable: oa;
+  }
+}
+
+interface IRobust
+{
+  in myEnum ia();
+  out void oa();
+
+  behaviour
+  {
+    on ia: {reply(myEnum.No);}
+    on inevitable: oa;
+  }
+}
+
+component ArmourIIPRE // IStrict to IRobust
+{
+  provides IRobust pRobust;
+  requires IStrict rStrict;
+  requires injected ILogger iLog;
+  
+  behaviour {
+    on pRobust.ia(): {reply(myEnum.No); iLog.Log($"In-event ia is illegal in port"$);} // armour illegal ia
+    on rStrict.oa(): pRobust.oa();  
+  }
+}
+
+component Dezyne
+{
+  provides IStrict pStrict;
+  requires IB rp;
+
+  behaviour
+  {
+    on pStrict.ia(): illegal;
+    on rp.oa(): pStrict.oa();  
+  }
+}
+
+interface IB
+{
+  in void ia();
+  out void oa();
+
+  behaviour
+  {
+    on ia: illegal;
+    on inevitable: oa;
+  }
+}
+
+component Native {
+	provides IRobust p;
+	requires IRobust rRobust;
+}
+
+component ArmouredSystemIIPRE {
+	requires IB pp;
+	provides IRobust ir;
+	
+	system {
+		Dezyne ai;
+		ArmourIIPRE am;
+		Native n;
+		
+		pp <=> ai.rp;
+		am.rStrict <=> ai.pStrict;
+		n.rRobust <=> am.pRobust;
+		ir <=> n.p;
+	}
+} 

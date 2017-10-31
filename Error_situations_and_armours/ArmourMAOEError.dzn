@@ -1,0 +1,200 @@
+/* armouring at the requires side (interface IStrict)
+ * create a robust copy of the requires interface IRobust
+ * create an armouring component Armour
+ * 
+ * MissingAsynchronousOutEvent_Error
+ * native component is expected to generate out-event asynchronously via requires interface
+ * but may not do that
+ * armour detects this by a timeout
+ */
+import Logger.dzn;
+
+interface IStrict
+{
+  in void ia();
+  out void oa();
+
+  out void RaiseError();
+  in void Reset();
+  out void Recovered();
+
+  behaviour
+  {
+	enum State {Idle, WaitingForOutput, RaisedErr, ResetErr};
+	State state = State.Idle;
+  	
+    [state == State.Idle] {
+	    on ia: {state = State.WaitingForOutput;}
+        on Reset: illegal; 
+	}
+	[state == State.WaitingForOutput] {
+    	on ia: illegal;
+  		on inevitable: {oa; state = State.Idle;}
+
+        on Reset: illegal; 
+	    on optional: {RaiseError; state = State.RaisedErr;}
+    }
+  	[state == State.RaisedErr] {
+  		on ia: illegal;
+  		on Reset: {state = State.ResetErr;}
+//	    on optional: {oa; state = State.Idle;} // after timeout the oa might still come
+    }
+  	[state == State.ResetErr] {
+  		on ia: illegal;
+        on Reset: illegal; 
+  		on inevitable: {Recovered; state = State.Idle;} // after Reset the oa cannot come anymore, only a Recovered
+	    on optional: {RaiseError; state = State.RaisedErr;}
+    }
+  }
+}
+/*
+ * in RaisedErr state the output oa is not allowed if we assume the timeout is strict
+ * i.e. as-if the timeout is part of the interface specification
+ */
+
+interface IRobust
+{
+  in void ia();
+  out void oa();
+
+  in void Reset();
+  out void Recovered();
+
+  behaviour
+  {
+  	bool inError = false;
+
+    on ia: {}
+    on optional: {oa; inError = false;}
+    
+    on Reset: inError=true;
+    [inError] on inevitable: {Recovered; inError=false;}       
+  }
+}
+
+component ArmourMAOEError {
+	provides IStrict pStrict;
+	requires IRobust rRobust;
+	requires ITimer it;
+	requires injected ILogger iLog;
+
+	behaviour {	
+		enum State {Idle, WaitingForOutput, RaisedErr, ResetErr};
+		State state = State.Idle;
+
+ 		[state == State.Idle] {
+			on pStrict.ia(): {rRobust.ia(); it.start(); state = State.WaitingForOutput;}
+			on rRobust.oa(): {}
+		}
+		[state == State.WaitingForOutput] {
+			on rRobust.oa(): {pStrict.oa(); it.cancel(); state = State.Idle;}
+			on it.timeout(): {
+				iLog.Log($"timeout on expected oa"$);
+				pStrict.RaiseError(); state = State.RaisedErr;
+			}
+		}
+	 	[state == State.RaisedErr] {
+		   	on pStrict.Reset(): {rRobust.Reset(); state = State.ResetErr;}  		
+    		on rRobust.Recovered(): {iLog.Log($"Recovered before Reset not trustworthy"$);}
+//			on rRobust.oa(): {pStrict.oa(); state = State.Idle;}	// if we would allow oa after timeout
+			on rRobust.oa(): {
+				iLog.Log($"oa while waiting for Reset event"$);
+			}
+  		}
+	  	[state == State.ResetErr] {
+    		on rRobust.Recovered(): {pStrict.Recovered(); state = State.Idle;}
+			on rRobust.oa(): {
+				iLog.Log($"oa while waiting for Recovered event"$);
+				pStrict.RaiseError(); state = State.RaisedErr;
+			}
+    	}   		
+    }
+}
+
+component Dezyne {
+	provides IA pp;
+	requires IStrict rStrict;
+	
+	behaviour {
+		enum State {Idle, WaitingForOutput, Error};
+		State state = State.Idle;
+			
+   		on rStrict.RaiseError(): {rStrict.Reset(); state = State.Error;}
+		[state == State.Idle] {
+			on pp.ia(): {rStrict.ia(); state = State.WaitingForOutput;}
+		}
+		[state == State.WaitingForOutput] {
+			on rStrict.oa(): {pp.oa(); state = State.Idle;}
+	   	}
+		[state == State.Error] {
+    		on rStrict.oa(): {pp.oa(); state = State.Idle;}
+    		on rStrict.Recovered(): {pp.oa(); state = State.Idle;}
+    	}
+    }
+}
+
+/*
+ * A missing oa is solved by the armour so is guaranteed by IA.
+ * Depends on the application whether this is meaningful and correct.
+ * Alternative might be to add an error out event to IA
+ */
+interface IA
+{
+  in void ia();
+  out void oa();
+
+  behaviour
+  {
+	bool waiting_for_oa = false;
+				
+	[!waiting_for_oa] on ia: waiting_for_oa = true;
+	[waiting_for_oa] {
+		on ia: illegal;
+		on inevitable: {oa; waiting_for_oa = false;}
+	}
+  }
+}
+
+
+interface ITimer
+{
+	in void start();
+	in void cancel();
+	out void timeout();
+	
+	behaviour {
+		bool running = false;
+		
+		on start: running = true;
+		on cancel: running = false;
+		[running] on inevitable: {timeout; running = false;}
+	}
+}
+
+component Native {
+	provides IRobust pRobust;
+	requires IRobust r;
+}
+
+component Timer
+{
+	provides ITimer it;
+}
+
+component ArmouredSystemMAOEError {
+	provides IA pp;
+	requires IRobust ir;
+	
+	system {
+		Dezyne re;
+		ArmourMAOEError am;
+		Native n;
+		Timer t;
+		
+		pp <=> re.pp;
+		re.rStrict <=> am.pStrict;
+		am.rRobust <=> n.pRobust;
+		am.it <=> t.it;
+		n.r <=> ir;
+	}
+}

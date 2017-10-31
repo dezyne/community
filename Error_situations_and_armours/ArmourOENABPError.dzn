@@ -1,0 +1,136 @@
+/* armouring at the requires side (interface IStrict)
+ * create a robust copy of the requires interface IRobust
+ * create an armouring component Armour
+ * 
+ * OutEventNotAllowedByPort_Error
+ * required interface is not allowed to send an out-event but may still do that
+ */
+import Logger.dzn;
+
+interface IStrict
+{
+  in void ia();
+  out void oa(); // nb not part of completeness check
+
+  out void RaiseError();
+  in void Reset();
+  out void Recovered();
+
+  behaviour
+  {
+  	enum InError {noErr, raisedErr, resetErr};
+   	InError inError = InError.noErr;
+  	
+    on ia: {}
+    
+   	on optional: {RaiseError; inError = InError.raisedErr;}
+    [inError.noErr] {
+ 	    on Reset: illegal; 
+   	}
+  	[inError.raisedErr] {
+  		on Reset: {inError = InError.resetErr;}
+    }
+  	[inError.resetErr] {
+  		on inevitable: {Recovered; inError = InError.noErr;}
+        on Reset: illegal; 
+    }
+  }
+}
+
+interface IRobust
+{
+  in void ia();
+  out void oa();
+
+  in void Reset();
+  out void Recovered();
+
+  behaviour
+  {
+  	bool inError = false;
+
+    on ia: {}
+    on optional: oa;
+
+    on Reset: inError = true;
+    [inError] on inevitable: {Recovered; inError = false;}   
+  }
+}
+
+component ArmourOENABPError // IStrict to IRobust
+{
+  provides IStrict pStrict;
+  requires IRobust rRobust;
+  requires injected ILogger iLog;
+  
+  behaviour {
+   	enum InError {noErr, raisedErr, resetErr};
+   	InError inError = InError.noErr;
+	
+    on rRobust.oa(): {
+    	iLog.Log($"Out-event oa is not allowed by port"$);
+    	pStrict.RaiseError(); inError = InError.raisedErr; 
+    } // armour potential oa  
+
+	[inError.noErr] {
+    	on pStrict.ia(): rRobust.ia(); 
+	}
+ 	[inError.raisedErr] {
+	    on pStrict.ia(): {iLog.Log($"ia event while in error status"$);}
+	   	on pStrict.Reset(): {rRobust.Reset(); inError = InError.resetErr;}  		
+    	on rRobust.Recovered(): {iLog.Log($"Recovered before Reset not trustworthy"$);}
+  	}
+  	[inError.resetErr] {
+	    on pStrict.ia(): {iLog.Log($"ia event while in error status"$);}
+    	on rRobust.Recovered(): {pStrict.Recovered(); inError = InError.noErr;}
+    }   
+  }
+}
+
+component Dezyne
+{
+  provides IA pp;
+  requires IStrict rStrict;
+
+  behaviour {
+    bool inError = false;
+
+   	on rStrict.RaiseError(): {rStrict.Reset(); inError = true;}
+    on pp.ia(): {} 
+	[inError] {
+    	on rStrict.Recovered(): {inError = false;}
+    }
+  }
+}
+
+
+interface IA
+{  
+  in void ia();
+
+  behaviour
+  {
+    on ia: {}
+  }
+}
+
+component Native {
+	provides IRobust pRobust;
+	requires IRobust r;
+}
+
+component ArmouredSystemOENABPError {
+	provides IA pp;
+	requires IRobust ir;
+	
+	system {
+		Dezyne re;
+		ArmourOENABPError am;
+		Native n;
+		
+		pp <=> re.pp;
+		re.rStrict <=> am.pStrict;
+		am.rRobust <=> n.pRobust;
+		n.r <=> ir;
+	}
+}

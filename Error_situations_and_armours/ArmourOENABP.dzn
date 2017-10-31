@@ -1,0 +1,86 @@
+/* armouring at the requires side (interface IStrict)
+ * create a robust copy of the requires interface IRobust
+ * create an armouring component Armour
+ * 
+ * OutEventNotAllowedByPort_
+ * required interface is not allowed to send an out-event but may still do that
+ */
+import Logger.dzn;
+
+interface IStrict
+{
+  in void ia();
+  out void oa(); // nb not part of completeness check
+
+  behaviour
+  {
+    on ia: {}
+  }
+}
+
+interface IRobust
+{
+  in void ia();
+  out void oa();
+
+  behaviour
+  {
+    on ia: {}
+    on optional: oa;
+  }
+}
+
+component ArmourOENABP // IStrict to IRobust
+{
+  provides IStrict pStrict;
+  requires IRobust rRobust;
+  requires injected ILogger iLog;
+  
+  behaviour {
+    on pStrict.ia(): rRobust.ia(); 
+    on rRobust.oa(): {iLog.Log($"Out-event oa is not allowed by port"$);} // armour potential oa  
+  }
+}
+
+component Dezyne
+{
+  provides IA pp;
+  requires IStrict rStrict;
+
+  behaviour
+  {
+    on pp.ia(): {}
+  }
+}
+
+
+interface IA
+{  
+  in void ia();
+
+  behaviour
+  {
+    on ia: {}
+  }
+}
+
+component Native {
+	provides IRobust pRobust;
+	requires IRobust r;
+}
+
+component ArmouredSystemOENABP {
+	provides IA pp;
+	requires IRobust ir;
+	
+	system {
+		Dezyne re;
+		ArmourOENABP am;
+		Native n;
+		
+		pp <=> re.pp;
+		re.rStrict <=> am.pStrict;
+		am.rRobust <=> n.pRobust;
+		n.r <=> ir;
+	}
+}

@@ -1,0 +1,152 @@
+/* armouring at the requires side (interface IStrict)
+ * create a robust copy of the requires interface IRobust
+ * create an armouring component Armour
+ *  
+ * IllegalBooleanValueInRequiresReply_Error
+ * a reply value from a required interface can contain a boolean value that is not allowed
+ */
+import Logger.dzn;
+
+interface IStrict
+{
+  in bool ia();
+
+  out void RaiseError();
+  in void Reset();
+  out void Recovered();
+
+  behaviour
+  {
+  	enum InError {noErr, raisedErr, resetErr};
+   	InError inError = InError.noErr;
+  	
+    on ia: reply (true);
+    
+    on ia: {RaiseError; reply(true); inError = InError.raisedErr;}
+   	on optional: {RaiseError; inError = InError.raisedErr;}
+    [inError.noErr] {
+ 	    on Reset: illegal; 
+   	}
+  	[inError.raisedErr] {
+  		on Reset: {inError = InError.resetErr;}
+    }
+  	[inError.resetErr] {
+  		on inevitable: {Recovered; inError = InError.noErr;}
+        on Reset: illegal; 
+    }
+  }
+}
+
+interface IRobust
+{
+  in bool ia();
+
+  in void Reset();
+  out void Recovered();
+
+  behaviour
+  {
+  	bool inError = false;
+
+    on ia: reply (true);
+    on ia: reply (false);
+
+    on Reset: inError=true;
+    [inError] on inevitable: {Recovered; inError=false;}   
+  }
+}
+
+component ArmourIBVIRRError // IStrict to IRobust
+{
+  provides IStrict pStrict;
+  requires IRobust rRobust;
+  requires injected ILogger iLog;
+  
+  behaviour {
+   	enum InError {noErr, raisedErr, resetErr};
+   	InError inError = InError.noErr;
+	
+    [inError.noErr] {
+	    on pStrict.ia(): {
+    		bool b = rRobust.ia();
+    		if (!b) {
+    			pStrict.RaiseError(); inError = InError.raisedErr; 
+    			iLog.Log($"Reply value false from ia not allowed by port"$);
+    		}
+    		reply(true);
+    	} // armour ignore (false) case 
+	}
+ 	[inError.raisedErr] {
+	    on pStrict.ia(): {
+	    	iLog.Log($"ia event while in error status"$);
+   			pStrict.RaiseError(); inError = InError.raisedErr; 
+    		reply(true);
+    	}
+	   	on pStrict.Reset(): {rRobust.Reset(); inError = InError.resetErr;}  		
+    	on rRobust.Recovered(): {iLog.Log($"Recovered before Reset not trustworthy"$);}
+  	}
+  	[inError.resetErr] {
+	    on pStrict.ia(): {
+	    	iLog.Log($"ia event while in error status"$);
+   			pStrict.RaiseError(); inError = InError.raisedErr; 
+    		reply(true);
+    	}
+    	on rRobust.Recovered(): {inError = InError.noErr; pStrict.Recovered();}
+    }   
+    
+  }
+}
+
+component Dezyne
+{
+  provides IA pp;
+  requires IStrict rStrict;
+
+  behaviour
+  {
+    bool inError = false;
+
+    on pp.ia(): {bool b = rStrict.ia(); reply(b);}
+
+   	on rStrict.RaiseError(): {inError = true; rStrict.Reset();}
+	[inError] {
+    	on rStrict.Recovered(): {inError = false;}
+    }
+    
+  }
+}
+
+/*
+ * erroneous situation completely hidden below interface IA
+ * depends on application whether this is ok or error should be raised higher up
+ */
+interface IA
+{  
+  in bool ia();
+
+  behaviour
+  {
+    on ia: reply (true);
+  }
+}
+
+component Native {
+	provides IRobust pRobust;
+	requires IRobust r;
+}
+
+component ArmouredSystemIBVIRR {
+	provides IA pp;
+	requires IRobust ir;
+	
+	system {
+		Dezyne re;
+		ArmourIBVIRRError am;
+		Native n;
+		
+		pp <=> re.pp;
+		re.rStrict <=> am.pStrict;
+		am.rRobust <=> n.pRobust;
+		n.r <=> ir;
+	}
+}

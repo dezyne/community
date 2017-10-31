@@ -1,0 +1,137 @@
+/* armouring at the requires side (interface IStrict)
+ * create a robust copy of the requires interface IRobust
+ * create an armouring component Armour
+ * 
+ * MissingAsynchronousOutEvent_
+ * native component is expected to generate out-event asynchronously via requires interface
+ * but may not do that
+ * armour detects this by a timeout
+ */
+import Logger.dzn;
+
+interface IStrict
+{
+  in void ia();
+  out void oa();
+
+  behaviour
+  {
+  	bool ia_called = false;
+  	
+    [!ia_called] on ia: {ia_called = true;}
+    [ia_called] {
+    	on ia: illegal;
+    	on inevitable: {oa; ia_called = false;}
+    }
+  }
+}
+
+interface IRobust
+{
+  in void ia();
+  out void oa();
+
+  behaviour
+  {
+    on ia: {}
+    on optional: oa;
+  }
+}
+
+component ArmourMAOE {
+	provides IStrict pStrict;
+	requires IRobust rRobust;
+	requires ITimer it;
+	requires injected ILogger iLog;
+
+	behaviour {	
+		bool waiting_for_oa = false;
+					
+		on it.timeout(): {
+			iLog.Log($"timeout on expected oa"$); 
+			pStrict.oa(); waiting_for_oa = false;
+		}
+		[waiting_for_oa]
+			on rRobust.oa(): {pStrict.oa(); it.cancel(); waiting_for_oa = false;}
+		[!waiting_for_oa]{
+			on pStrict.ia(): {rRobust.ia(); it.start(); waiting_for_oa = true;}
+			on rRobust.oa(): {}
+		}		
+    }
+}
+
+component Dezyne {
+	provides IA pp;
+	requires IStrict rStrict;
+	
+	behaviour {	
+		bool waiting_for_oa = false;
+				
+		[!waiting_for_oa] on pp.ia(): {rStrict.ia(); waiting_for_oa = true;}
+		[waiting_for_oa] on rStrict.oa(): {pp.oa(); waiting_for_oa = false;}
+    }
+}
+
+/*
+ * A missing oa is solved by the armour so is guaranteed by IA.
+ * Depends on the application whether this is meaningful and correct.
+ */
+interface IA
+{
+  in void ia();
+  out void oa();
+
+  behaviour
+  {
+	bool waiting_for_oa = false;
+				
+	[!waiting_for_oa] on ia: waiting_for_oa = true;
+	[waiting_for_oa] {
+		on ia: illegal;
+		on inevitable: {oa; waiting_for_oa = false;}
+	}
+  }
+}
+
+interface ITimer
+{
+	in void start();
+	in void cancel();
+	out void timeout();
+	
+	behaviour {
+		bool running = false;
+		
+		on start: running = true;
+		on cancel: running = false;
+		[running] on inevitable: {timeout; running = false;}
+	}
+}
+
+component Native {
+	provides IRobust pRobust;
+	requires IRobust r;
+}
+
+component Timer
+{
+	provides ITimer it;
+}
+
+component ArmouredSystemMAOE {
+	provides IA pp;
+	requires IRobust ir;
+	
+	system {
+		Dezyne re;
+		ArmourMAOE am;
+		Native n;
+		Timer t;
+		
+		pp <=> re.pp;
+		re.rStrict <=> am.pStrict;
+		am.rRobust <=> n.pRobust;
+		am.it <=> t.it;
+		n.r <=> ir;
+	}
+}

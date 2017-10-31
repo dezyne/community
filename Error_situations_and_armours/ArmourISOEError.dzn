@@ -1,0 +1,157 @@
+/* armouring at the requires side (interface IStrict)
+ * create a robust copy of the requires interface IRobust
+ * create an armouring component Armour
+ * 
+ * IllegalSynchronousOutEvent_Error
+ * context is expected to not generate synchronous out-event via requires interface
+ * but may still do that
+ */
+import Logger.dzn;
+
+interface IStrict
+{
+  in void ia();
+  out void oa();
+
+  out void RaiseError();
+  in void Reset();
+  out void Recovered();
+
+  behaviour
+  {
+   	enum InError {noErr, raisedErr, resetErr};
+   	InError inError = InError.noErr;
+
+	on ia: {}
+    on inevitable: oa;
+
+	[inError.noErr] {
+    	on ia: {RaiseError; inError = InError.raisedErr;}
+	    on Reset: illegal; 
+   	}
+  	[inError.raisedErr] {
+//  		on ia: {}
+  		on Reset: {inError = InError.resetErr;}
+    }
+  	[inError.resetErr] {
+//  		on ia: {}
+  		on inevitable: {Recovered; inError = InError.noErr;}
+        on Reset: illegal; 
+    }
+  }
+}
+
+interface IRobust
+{
+  in void ia();
+  out void oa();
+
+  in void Reset();
+  out void Recovered();
+
+  behaviour
+  {
+  	bool inError = false;
+
+    on ia: {}
+    on ia: oa;
+    on inevitable: oa;
+
+    on Reset: inError=true;
+    [inError] on inevitable: {Recovered; inError=false;}   
+  }
+}
+
+component ArmourISOEError {
+	provides IStrict pStrict;
+	requires IRobust rRobust;
+	requires injected ILogger iLog;
+
+	behaviour {	
+		requires dzn.async p;
+	   	enum InError {noErr, raisedErr, resetErr};
+   		InError inError = InError.noErr;
+		bool requested = false;
+				
+		[inError.noErr] {		
+			on pStrict.ia(): {
+				rRobust.ia(); 
+				if (!requested) {p.req(); requested = true;}
+			}
+			on rRobust.oa(): {
+				if (!requested) pStrict.oa();
+				else {
+					requested = false; p.clr(); 
+					iLog.Log($"Native comp does illegal sync out-event oa"$);
+		    		inError = InError.raisedErr;
+					pStrict.RaiseError();
+				}
+			}
+			on p.ack(): requested = false;
+		}
+	  	[inError.raisedErr] {
+		    on pStrict.ia(): {iLog.Log($"ia event while in error status"$);}
+		    on rRobust.oa(): {iLog.Log($"oa event while in error status"$);}
+		   	on pStrict.Reset(): {rRobust.Reset(); inError = InError.resetErr;}  		
+  		}
+  		[inError.resetErr] {
+		    on pStrict.ia(): {iLog.Log($"ia event while in error status"$);}
+		    on rRobust.oa(): {iLog.Log($"oa event while in error status"$);}
+    		on rRobust.Recovered(): {inError = InError.noErr; pStrict.Recovered();}
+    	}   
+
+    }
+}
+
+component Dezyne {
+	provides IA pp;
+	requires IStrict rStrict;
+
+	behaviour {			
+	    bool inError = false;
+
+		on pp.ia(): {rStrict.ia();}
+		on rStrict.oa(): {pp.oa();}
+
+		[!inError] {
+    		on rStrict.RaiseError(): {inError = true; rStrict.Reset();}
+    	}
+		[inError] {
+    		on rStrict.Recovered(): {inError = false; pp.oa();}
+    	}
+    }
+}
+
+interface IA
+{
+  in void ia();
+  out void oa();
+
+  behaviour
+  {
+    on ia: {}
+    on inevitable: oa;
+  }
+}
+
+component Native {
+	provides IRobust pRobust;
+	requires IRobust r;
+}
+
+component ArmouredSystemISOEError {
+	provides IA pp;
+	requires IRobust ir;
+	
+	system {
+		Dezyne re;
+		ArmourISOEError am;
+		Native n;
+		
+		pp <=> re.pp;
+		re.rStrict <=> am.pStrict;
+		am.rRobust <=> n.pRobust;
+		n.r <=> ir;
+	}
+}
+

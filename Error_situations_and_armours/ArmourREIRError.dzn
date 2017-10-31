@@ -1,0 +1,158 @@
+/* armouring at the requires side (interface IStrict)
+ * create a robust copy of the requires interface IRobust
+ * create an armouring component Armour
+ * 
+ * RangeErrorInRequiresReply_Error
+ * the reply of a requires interface event could have a range error
+ * (a mis-mapping between to subints)
+ */
+import Logger.dzn;
+
+subint SubCount {0..2};
+subint AllCount {-1..6}; // should in fact be full integer
+
+interface IStrict
+{
+  in SubCount ia();
+  
+  out void RaiseError();
+  in void Reset();
+  out void Recovered();
+
+  behaviour
+  {
+   	enum InError {noErr, raisedErr, resetErr};
+   	InError inError = InError.noErr;
+
+  	SubCount c=0;
+    on ia: reply(0);
+    on ia: reply(1);
+    on ia: reply(2);
+
+	[inError.noErr] {
+    	on ia: {RaiseError; reply(c+0); inError = InError.raisedErr;}
+	    on Reset: illegal; 
+   	}
+  	[inError.raisedErr] {
+  		on Reset: {inError = InError.resetErr;}
+    }
+  	[inError.resetErr] {
+  		on inevitable: {Recovered; inError = InError.noErr;}
+        on Reset: illegal; 
+    }
+  }
+}
+
+interface IRobust
+{
+  in AllCount ia();
+  
+  in void Reset();
+  out void Recovered();
+
+  behaviour
+  {
+  	bool inError = false;
+  	
+    on ia: reply (-1);	// -1 triggers an error
+    on ia: reply (0);	// 0 is ok behaviour
+    
+    on Reset: inError = true;
+    [inError] on inevitable: {Recovered; inError = false;}   
+  }
+}
+
+component ArmourREIRError // IStrict to IRobust
+{
+  provides IStrict pStrict;
+  requires IRobust rRobust;
+  requires injected ILogger iLog;
+  
+  behaviour {
+   	enum InError {noErr, raisedErr, resetErr};
+   	InError inError = InError.noErr;
+	AllCount c = 0;
+	
+	[inError.noErr] {
+	    on pStrict.ia(): {
+    		c = rRobust.ia();
+    		if (c<0) {
+    			iLog.Log($"Reply value from ia outside range (too small)"$);
+    			pStrict.RaiseError(); inError = InError.raisedErr;
+    			reply(0);
+    		}
+	    	else if (c>2) {
+    			iLog.Log($"Reply value from ia outside range (too large)"$);
+    			pStrict.RaiseError(); inError = InError.raisedErr;
+    			reply (2);
+    		}
+	    	else reply(c+0);
+    	} // armour on boundary values
+    }
+  	[inError.raisedErr] {
+	    on pStrict.ia(): {
+	    	iLog.Log($"ia event while in error status"$);
+	    	reply(0);
+    	}
+	   	on pStrict.Reset(): {rRobust.Reset(); inError = InError.resetErr;}  		
+  	}
+  	[inError.resetErr] {
+	    on pStrict.ia(): {
+	    	iLog.Log($"ia event while in error status"$);
+	    	reply(0);
+    	}
+    	on rRobust.Recovered(): {pStrict.Recovered(); inError = InError.noErr;}
+    }   
+  }
+}
+
+component Dezyne
+{
+  provides IA pp;
+  requires IStrict rStrict;
+
+  behaviour
+  {
+    SubCount i = 0;
+    bool inError = false;
+
+    on pp.ia(): i = rStrict.ia(); 
+	[!inError] {
+    	on rStrict.RaiseError(): {rStrict.Reset(); inError = true;}
+    }
+	[inError] {
+    	on rStrict.Recovered(): {inError = false;}
+    }
+  }
+}
+
+interface IA
+{
+  in void ia();
+
+  behaviour
+  {
+    on ia: {}
+  }
+}
+
+component Native {
+	provides IRobust pRobust;
+	requires IRobust r;
+}
+
+component ArmouredSystemREIRError {
+	provides IA pp;
+	requires IRobust ir;
+	
+	system {
+		Dezyne re;
+		ArmourREIRError am;
+		Native n;
+		
+		pp <=> re.pp;
+		re.rStrict <=> am.pStrict;
+		am.rRobust <=> n.pRobust;
+		n.r <=> ir;
+	}
+}

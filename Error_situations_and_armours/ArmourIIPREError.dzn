@@ -1,0 +1,132 @@
+/* armouring at the provides side (interface IStrict)
+ * create a robust copy of the provides interface IRobust
+ * create an armouring component Armour
+ * 
+ * IllegalInProvidesReturnsEnum_Error
+ * a provided interface may have an illegal in-event with a myEnum return type
+ */
+import Logger.dzn;
+
+enum myEnum {Yes, No};
+
+interface IStrict
+{
+  in myEnum ia();
+  out void oa();
+
+  in void RaiseError();
+  out void Reset();
+  in void Recovered();
+
+  behaviour
+  {
+  	bool inError = false;
+
+    on ia: illegal;
+    on inevitable: oa;
+
+   	[!inError] {
+    	on RaiseError: {Reset; inError = true;}
+	    on Recovered: illegal;
+  	}
+  	[inError] {  
+    	on RaiseError: illegal;
+	    on Recovered: inError = false;
+  	}
+  }
+}
+
+interface IRobust
+{
+  in myEnum ia();
+  out void oa();
+
+  out void Reset();
+  in void Recovered();
+
+  behaviour
+  {
+    on ia: {reply(myEnum.No);}
+    on inevitable: oa;
+
+	on ia: {Reset; reply(myEnum.No);}
+	on Recovered: {}    
+	on Recovered: Reset; // in case Recovered called before Reset requested 
+  }
+}
+
+component ArmourIIPREError // IStrict to IRobust
+{
+  provides IRobust pRobust;
+  requires IStrict rStrict;
+  requires injected ILogger iLog;
+  
+  behaviour {
+  	bool InError = false;
+
+   	on rStrict.Reset(): {pRobust.Reset(); InError = true;} 	
+  	[!InError] {
+   		on pRobust.ia(): {
+   			iLog.Log($"Input event ia is illegal in port"$);
+   			rStrict.RaiseError();reply(myEnum.No); InError = true;
+   		} // armour illegal ia
+    	on rStrict.oa(): pRobust.oa();	
+    	on pRobust.Recovered(): {iLog.Log($"Recovered event while not in error"$);}
+    }
+    [InError] {
+   		on pRobust.ia(): {iLog.Log($"In-event ia in error state"$); reply(myEnum.No);}
+    	on rStrict.oa(): {iLog.Log($"Out-event oa in error state"$);}
+    	on pRobust.Recovered(): {rStrict.Recovered(); InError = false;}
+    }
+  }
+}
+
+component Dezyne
+{
+  provides IStrict pp;
+  requires IB rp;
+
+  behaviour
+  {
+  	bool InError = false;
+
+    on pp.ia(): illegal;
+    on rp.oa(): pp.oa();
+    
+  	[!InError] on pp.RaiseError(): {pp.Reset(); InError = true;}
+    [InError] on pp.Recovered(): {InError = false;}
+  }
+}
+
+interface IB
+{
+  in void ia();
+  out void oa();
+
+  behaviour
+  {
+    on ia: illegal;
+    on inevitable: oa;
+  }
+}
+
+component Native {
+	provides IRobust p;
+	requires IRobust r;
+}
+
+component ArmouredSystemIIPREError {
+	requires IB pp;
+	provides IRobust ir;
+	
+	system {
+		Dezyne ai;
+		ArmourIIPREError am;
+		Native n;
+		
+		pp <=> ai.rp;
+		am.rStrict <=> ai.pp;
+		n.r <=> am.pRobust;
+		ir <=> n.p;
+	}
+} 

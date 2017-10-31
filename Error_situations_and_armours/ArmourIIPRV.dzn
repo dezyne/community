@@ -1,0 +1,89 @@
+/* armouring at the provides side (interface IStrict)
+ * create a robust copy of the provides interface IRobust
+ * create an armouring component Armour
+ * 
+ * IllegalInProvidesReturnsVoid
+ * a provided interface may have an illegal in-event with a void return type
+ */
+import Logger.dzn;
+ 
+interface IStrict
+{
+  in void ia();
+  out void oa();
+
+  behaviour
+  {
+    on ia: illegal;
+    on inevitable: oa;
+  }
+}
+
+interface IRobust
+{
+  in void ia();
+  out void oa();
+
+  behaviour
+  {
+    on ia: {}
+    on inevitable: oa;
+  }
+}
+
+component ArmourIIPRV // IStrict to IRobust
+{
+  provides IRobust pRobust;
+  requires IStrict rStrict;
+  requires injected ILogger iLog;
+  
+  behaviour {
+    on pRobust.ia(): {iLog.Log($"Input event ia is illegal in port"$);} // armour illegal ia
+    on rStrict.oa(): pRobust.oa();  
+  }
+}
+
+component Dezyne
+{
+  provides IStrict pp;
+  requires IB rp;
+
+  behaviour
+  {
+    on pp.ia(): illegal;
+    on rp.oa(): pp.oa();  
+  }
+}
+
+interface IB
+{
+  in void ia();
+  out void oa();
+
+  behaviour
+  {
+    on ia: illegal;
+    on inevitable: oa;
+  }
+}
+
+component Native {
+	provides IRobust p;
+	requires IRobust r;
+}
+
+component ArmouredSystemIIPRV {
+	requires IB pp;
+	provides IRobust ir;
+	
+	system {
+		Dezyne ai;
+		ArmourIIPRV am;
+		Native n;
+		
+		pp <=> ai.rp;
+		am.rStrict <=> ai.pp;
+		n.r <=> am.pRobust;
+		ir <=> n.p;
+	}
+} 

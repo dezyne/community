@@ -1,0 +1,10 @@
+extern str $char*$;
+
+interface ILogger 
+{
+	in void Log(str msg);
+	
+	behaviour {
+		on Log: {}
+	}
+}
