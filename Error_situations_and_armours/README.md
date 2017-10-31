@@ -22,11 +22,13 @@ The overall state behaviour related to this pattern is a state machine with 3 st
 The Armour maps the Robust interface to the Strict interface. It passes on all events in normal operation. It triggers on deviations of the allowed behaviour and then enters an error state. It logs the error using a Log interface via an injected port.  Also it raises the error with the Dezyne component and prevents any further regular interaction with the Native component until the error is handled as described above.
 
 ## Native component below required interface
-This is the ‘natural’ way Native components are connected. A logging component connected through an injected port logs the error information. The variant with error handling is an extension of the variant without error handling and extends the Armour and Strict interface with the error handling state behaviour described above.  The Dezyne component and Robust interface error handling does only deal with 2 states, in error or not. 
+This is the ‘natural’ way Native components are connected. A logging component connected through an injected port logs the error information. The variant with error handling is an extension of the variant without error handling and extends the Armour and Strict interface with the error handling state behaviour described above.  The Dezyne component and Robust interface error handling does only deal with 2 states, in error or not.
+
 ![](images/system_diagram1.png)
 
 ## Native component above provided interface
 This may happen in special cases. The armouring concept is slightly more complex here.  On the other hand in the variant with error handling all components and interfaces only have a 2–state error handling mechanism, in error or not.  The Dezyne component needs the async feature to automatically send the asynchronous Reset event as a response to the RaiseError event. The Native component might send a Recovered event before it is being Reset. In that case the asynchronous Reset event will not be sent anymore by the clr of the async.
+
 ![](images/system_diagram2.png)
 
 ## Overview of Armouring patterns
