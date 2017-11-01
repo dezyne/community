@@ -1,0 +1,120 @@
+interface IA {
+	in void next();		// step in super statemachine
+	in void ssm1();		// start of sub statemachine 1
+	in void ssm2();		// start of sub statemachine 2
+	in void subnext();	// step in sub statemachine *
+	out void superstep();
+	out void substep();
+	
+	behaviour {
+		on next:{}
+		on next:superstep;
+		on ssm1: {}
+		on ssm2: {}
+		on subnext:{}
+		on subnext: substep;
+		on subnext: superstep;
+	}
+}
+
+// 'internal' sub state machine interface
+interface IForwardBack {
+	in void forward();
+	in void exit();
+	out void entry();
+	out void back();
+	
+	behaviour {
+		on forward: entry;
+		on exit: back;
+	}
+}
+
+component SSMPattern {
+	provides IA ia;
+	requires IForwardBack ifo;
+	
+	behaviour {
+		enum Substate {a, b};		// used by both sub statemachines
+		enum State {one, two, three};
+		enum RetValue {ok, nok};	// pass value back from sub- to super-SM
+		State state = State.one;
+		Substate substate = Substate.a;
+		RetValue retvalue = RetValue.nok;
+		
+		[state.one] {
+			on ia.next(): {ia.superstep(); state = State.two;}
+			on ia.ssm1(): {ifo.forward();}
+			on ia.ssm2(): {}
+		}		
+		[state.two] {
+			on ia.next(): {ia.superstep(); state = State.one;}	
+			on ia.ssm1(): {}
+			on ia.ssm2(): {ifo.forward();}
+		}
+		[state.three] {
+			on ia.next(): {ia.superstep(); state = State.one;}
+			on ia.ssm1(): {}
+			on ia.ssm2(): {}
+			on ia.subnext():{}		
+			on ifo.back(): {
+				ia.superstep();
+				if (retvalue == RetValue.ok) // use return value from substate machine
+					state = State.one; 
+				else 
+					state = State.two; 
+			}
+		}
+		
+		[state.one] { //sub state machine1
+			
+			on ifo.entry(): {substate = Substate.a;}
+			
+			[substate.a] {
+				on ia.subnext(): {
+					ia.substep();
+					retvalue = RetValue.nok;
+					substate = Substate.b;
+				}
+			}
+			[substate.b] {
+				on ia.subnext(): {
+					retvalue = RetValue.ok; // pass value to super state machine
+					substate = Substate.a;  // deep/shallow but also done at entry
+					state = State.three; 
+					ifo.exit();
+				}
+			}	 
+		}
+		[state.two] { //sub state machine2
+			
+			on ifo.entry(): {substate = Substate.a;}
+			
+			[substate.a] {
+				on ia.subnext(): {
+					ia.substep();
+					retvalue = RetValue.ok;
+					substate = Substate.b;
+				}
+			}
+			[substate.b] {
+				on ia.subnext(): {
+					retvalue = RetValue.nok; // pass value to super state machine
+					substate = Substate.a;   // deep/shallow but also done at entry
+					state = State.three; 
+					ifo.exit();
+				}
+			}			 
+		}		
+	}
+}
+
+component FB {
+	provides IForwardBack ifb;
+	
+	behaviour {
+		on ifb.forward(): ifb.entry();
+		on ifb.exit(): ifb.back();		
+	}
+}
+
