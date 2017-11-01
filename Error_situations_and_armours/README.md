@@ -34,16 +34,16 @@ This may happen in special cases. The armouring concept is slightly more complex
 ## Overview of Armouring patterns
 This is the exhaustive list of Armour patterns separated in armouring either a provides interface or a requires interface. They all come in 2 flavours, with or without error handling.
 ### In Provides interface:
-* In-event not allowed by port (Illegal in Provides returns void) -> an in-event with void return value is defined as illegal in the interface
-* In-event not allowed by port (Illegal in Provides returns bool) -> an in-event with bool return value is defined as illegal in the interface
-*	In-event not allowed by port (Illegal in Provides returns enum) -> an in-event with enum return value is defined as illegal in the interface (very similar to bool case)
+* ArmourIIPRV (IllegalInProvidesReturnsVoid): In-event not allowed by port -> an in-event with void return value is defined as illegal in the interface
+* ArmourIIPRB (IllegalInProvidesReturnsBool): In-event not allowed by port -> an in-event with bool return value is defined as illegal in the interface
+*	ArmourIIPRE (IllegalInProvidesReturnsEnum): In-event not allowed by port -> an in-event with enum return value is defined as illegal in the interface (very similar to bool case)
 ### In Requires interface:
-*	Out-event not allowed by port -> context should not generate an asynchronous out-event via requires interface
-*	Illegal synchronous out-event -> context should not generate a synchronous out-event via requires interface
-*	Missing synchronous out-event -> context is expected to generate a synchronous out-event via requires interface
-*	Missing asynchronous out-event -> after a timeout period the armour can supplement the missing asynchronous out-event
-*	Reply value not allowed by port (Range error in Requires reply) -> the reply of a requires interface event could have a range error (a mis-mapping between two subints)
-*	Reply value not allowed by port (Illegal Boolean value in Requires reply) -> a reply value from a required interface can contain a boolean value that is not allowed
+*	ArmourOENABP (OutEventNotAllowedByPort): Event not allowed -> context should not generate an asynchronous out-event via requires interface
+*	ArmourISOE (IllegalSynchronousOutEvent): Illegal -> context should not generate a synchronous out-event via requires interface
+*	ArmourMSOE (MissingSynchronousOutEvent): Missing event -> context is expected to generate a synchronous out-event via requires interface
+*	ArmourMSOE (MissingAsynchronousOutEvent): Missing event -> after a timeout period the armour can supplement the missing asynchronous out-event
+*	ArmourREIR (RangeErrorInRequiresReply): Reply value not allowed by port -> the reply of a requires interface event could have a range error (a mis-mapping between two subints)
+*	ArmourIBVIRR (Illegal Boolean value in Requires reply): Reply value not allowed by port -> a reply value from a required interface can contain a boolean value that is not allowed
 ### Might be expected but not possible Armour cases:
 *	Range error in function parameter in/out-event => events cannot have control parameters
 *	Missing in-event => occurrence of an in-event cannot be enforced
