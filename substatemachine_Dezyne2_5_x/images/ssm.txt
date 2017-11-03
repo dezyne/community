@@ -1,0 +1,22 @@
+@startuml
+scale 350 width
+[*] --> one
+
+state one {
+  one --> two : ia.next
+  one --> one_a : ia.ssm1
+  one_a --> one_b : ia.subnext
+  one_b --> three : ia.subnext
+}
+
+state two {
+  two --> one : ia.next
+  two --> two_a : ia.ssm1
+  two_a --> two_b : ia.subnext
+  two_b --> three : ia.subnext
+}  
+
+state three {
+  three --> one : ia.next 
+}
+@enduml
