@@ -4,7 +4,7 @@ This repository is available to share anything related to Dezyne between Dezyne 
 
 # SubState Machines
 
-This page (https://github.com/VerumSoftwareTools/DezyneCommunity/tree/master/substatemachine_Dezyne2_5_x) explains the progress being made on the implementation of sub-state machines in the dezyne langauge
+[This page](https://github.com/VerumSoftwareTools/DezyneCommunity/tree/master/substatemachine_Dezyne2_5_x) explains the progress being made on the implementation of sub-state machines in the dezyne langauge
 
 # Logging
 
