@@ -2,9 +2,7 @@
 
 This repository is available to share anything related to Dezyne between Dezyne users 
 
-# Example code
+# Logging
 
-## how to create a StreamLogger class 
+[This page](https://github.com/VerumSoftwareTools/DezyneCommunity/tree/master/logging) describes a way to inject a StreamLogger class into the locator to re-direct the logging to your own logger intra-structure.
 
-To redirect the logging output from dezyne to a custum logger framework a special object can be
-added to the locator. An example implemenation is available [here](https://github.com/VerumSoftwareTools/DezyneCommunity/blob/master/examples/StreamLogger.h)
