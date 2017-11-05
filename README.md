@@ -2,9 +2,11 @@
 
 This repository is available to share anything related to Dezyne between Dezyne users 
 
+First of all, see https://www.verum.com/support/tutorials/ for the online tutorials and examples, they are really good to get you started!
+
 # SubState Machines
 
-[This page](https://github.com/VerumSoftwareTools/DezyneCommunity/tree/master/substatemachine_Dezyne2_5_x) explains the progress being made on the implementation of sub-state machines in the dezyne langauge
+[The SubState Machines page](https://github.com/VerumSoftwareTools/DezyneCommunity/tree/master/substatemachine_Dezyne2_5_x) explains the progress being made on the implementation of sub-state machines in the dezyne langauge
 
 # Logging
 
