@@ -110,7 +110,8 @@ namespace dzn
     , event(event)
     , reply("return")
     {
-      trace_in(os, meta, event); os << " " << *c << std::endl;
+      os << path(meta.requires.meta, meta.requires.port) << "." << event << " -> " 
+         << path(meta.provides.meta, meta.provides.port) << "." << event << " [enter] " << *c << "\n";
       if(c->dzn_rt.handling(c))
       {
         collateral_block(c->dzn_locator);
@@ -130,7 +131,8 @@ namespace dzn
     }
     ~call_helper()
     {
-      trace_out(os, meta, reply.c_str()); os << " " << *c << std::endl;
+      os << path(meta.requires.meta, meta.requires.port) << "." << event << " <- "
+        << path(meta.provides.meta, meta.provides.port) << "." << event << " [leave] " << *c << " (" << reply.c_str() << ")\n";
     }
   };
 
@@ -141,12 +143,17 @@ namespace dzn
     return helper(l);
   }
 
-  template <typename C, typename L>
-  void call_out(C* c, L&& l, const dzn::port::meta& meta, const char* event)
+  template <typename C, typename Func>
+  void call_out(C* c, Func&& func, const dzn::port::meta& meta, const char* event)
   {
     auto& os = c->dzn_locator.template get<typename std::ostream>();
-    trace_out(os, meta, event); os << " " << *c << std::endl;
-    c->dzn_rt.defer(meta.provides.address, c, l);
+    const std::string requires = path(meta.requires.meta, meta.requires.port) + "." + event;
+    const std::string provides = path(meta.provides.meta, meta.provides.port) + "." + event;
+    c->dzn_rt.defer(meta.provides.address, c, [&os, requires, provides, func, c] {
+      os << requires << " -> " << provides << " [enter] " << *c << "\n";
+      func();
+      os << provides << " <- " << requires << " [leave] " << *c << "\n";
+    });
   }
 }
 #endif //DZN_RUNTIME_HH
