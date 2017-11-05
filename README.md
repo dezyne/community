@@ -6,7 +6,7 @@ First of all, see https://www.verum.com/support/tutorials/ for the online tutori
 
 # SubState Machines
 
-[The SubState Machines page](https://github.com/VerumSoftwareTools/DezyneCommunity/tree/master/substatemachine_Dezyne2_5_x) explains the progress being made on the implementation of sub-state machines in the dezyne langauge
+[The SubState Machines page](https://github.com/VerumSoftwareTools/DezyneCommunity/tree/master/substatemachine_Dezyne2_5_x) explains how a sub-state machine can be implemented, even without the native support of sub-state-machine syntax in the dezyne language. (native support is currently under development)
 
 # Logging
 
