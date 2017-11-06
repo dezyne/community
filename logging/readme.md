@@ -61,3 +61,17 @@ siren on! (tid: 9288)
 
 Notice that the postfixed threadid is added in the main and is not part of the runtime modification.
 
+If the proposed changes in the code generation will be accepted and implemented the output could look like this:
+
+```
+<external>.console.arm -> .alarm.console.arm [enter] [state: Disarmed, sounding: false] (tid: 9288)
+sensor enabled (tid: 9288)
+<external>.console.arm <- .alarm.console.arm [leave] [state: Armed, sounding: false] (return) (tid: 9288)
+.alarm.sensor.triggered -> <external>.sensor.triggered [enter] [state: Armed, sounding: false] (tid: 9288)
+Detected! (tid: 9288)
+siren on! (tid: 9288)
+<external>.sensor.triggered <- .alarm.sensor.triggered [leave] [state: Armed, sounding: true] (tid: 9288)
+```
+
+Here the names of the component state enum have been added and the name of the variables prefixed.
+
