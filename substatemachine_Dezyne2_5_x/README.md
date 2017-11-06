@@ -20,7 +20,7 @@ within the behaviour block of the component. We have put it in separate code blo
 
 ## Event forwarding
 
-This is implemented by adding a special requires port to the component that on every event does a synchronous call-back. This construction is also referred to as reflector pattern.
+This is implemented by adding a special requires port (IReflector) to the component that on every event does a synchronous call-back. This construction is also referred to as reflector pattern.
 The forward raises an event and the call-back is stored in the output event queue of the component.
 It will be processed once the full statement block that contained the forward has been executed.
 The call back will be captured in the SSM and will e.g. be mapped on a dedicated "on entry" event.
@@ -33,4 +33,4 @@ Below diagram shows an example with high level states 'one', 'two', 'three' and 
 In the corresponding DZN file the SSM state variable (with values 'a', 'b') is reused between the two SSMs since they are not active in parallel.
 
 ![](images/ssm.png)
-An UML like diagram would look like this
+An UML like diagram would look like this. Notice that the Reflector port is only an implementation detail and not relevant in the design of the state machine hierarchy.
