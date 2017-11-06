@@ -60,7 +60,7 @@ siren on! (tid: 9288)
 ```
 Notice that the postfixed threadid is added in the main and is not part of the runtime modification.
 The modification is quite simple and is contained only in Runtime.hh, it can also be customized as desired.
-The change can be viewed (here)[https://github.com/VerumSoftwareTools/DezyneCommunity/commit/f4b331fc8e816efcef6c78cf574472a7d9ceddaf].
+The change can be viewed [here](https://github.com/VerumSoftwareTools/DezyneCommunity/commit/f4b331fc8e816efcef6c78cf574472a7d9ceddaf).
 
 
 If the proposed changes in the code generation will be accepted and implemented the output could look like this:
