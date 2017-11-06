@@ -35,4 +35,29 @@ The information being output by dezyne models as of version 2.1.1-2.5.3 is compl
 However, if you want to read and understand the logging without cross-referencing it with a Dezyne model this is form is not ideal.
 There is an [ongoing discussion](https://github.com/janwilmans/DezyneSamples/issues/1) and effort to make the output coming from dezyne models customizable.
 
+A working prototype of a modified Runtime is available [here](https://github.com/janwilmans/DezyneSamples/blob/master/Alarm/dzn/runtime.hh)
+
+Originally the output was:
+
+```
+<external>.arm -> .alarm.console.arm [0, 0]
+sensor enabled
+.alarm.console.return -> <external>.return [1, 0]
+<external>.triggered -> .alarm.sensor.triggered [1, 0]
+Detected!
+siren on!
+``` 
+
+With the modified runtime it look like:
+```
+<external>.console.arm -> .alarm.console.arm [enter] [0, 0] (tid: 9288)
+sensor enabled (tid: 9288)
+<external>.console.arm <- .alarm.console.arm [leave] [1, 0] (return) (tid: 9288)
+.alarm.sensor.triggered -> <external>.sensor.triggered [enter] [1, 0] (tid: 9288)
+Detected! (tid: 9288)
+siren on! (tid: 9288)
+<external>.sensor.triggered <- .alarm.sensor.triggered [leave] [1, 1] (tid: 9288)
+```
+
+Notice that the postfixed threadid is added in the main and is not part of the runtime modification.
 
