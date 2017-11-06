@@ -4,7 +4,7 @@
 ## how to create a StreamLogger class 
 
 To redirect the logging output from dezyne to a custum logger framework a special object can be
-added to the locator. An example implemenation is available [here](https://github.com/VerumSoftwareTools/DezyneCommunity/blob/master/examples/StreamLogger.h)
+added to the locator. An example implemenation is available as StreamLogger.h [here](https://github.com/VerumSoftwareTools/DezyneCommunity/blob/master/examples/StreamLogger.h)
 
 ```cpp
   void main()
@@ -24,7 +24,7 @@ added to the locator. An example implemenation is available [here](https://githu
     
     ~~~ more code follows ~~~
    }
-
+```
 Notice: The custom class StreamLogger must be inserted into the locator as a 'std::ostream' typed object, otherwise, it will not be picked up by the runtime
  
 
