@@ -1,4 +1,4 @@
-# DezyneCommunity repository
+# Dezyne Community repository
 
 This repository is available to share anything related to Dezyne between Dezyne users 
 
