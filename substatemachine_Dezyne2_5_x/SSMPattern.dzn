@@ -18,7 +18,7 @@ interface IA {
 }
 
 // 'internal' sub state machine interface
-interface IForwardBack {
+interface IReflector {
 	in void forward();
 	in void exit();
 	out void entry();
@@ -32,7 +32,7 @@ interface IForwardBack {
 
 component SSMPattern {
 	provides IA ia;
-	requires IForwardBack ifo;
+	requires IReflector iReflector;
 	
 	behaviour {
 		enum Substate {a, b};		// used by both sub statemachines
@@ -44,20 +44,20 @@ component SSMPattern {
 		
 		[state.one] {
 			on ia.next(): {ia.superstep(); state = State.two;}
-			on ia.ssm1(): {ifo.forward();}
+			on ia.ssm1(): {iReflector.forward();}
 			on ia.ssm2(): {}
 		}		
 		[state.two] {
 			on ia.next(): {ia.superstep(); state = State.one;}	
 			on ia.ssm1(): {}
-			on ia.ssm2(): {ifo.forward();}
+			on ia.ssm2(): {iReflector.forward();}
 		}
 		[state.three] {
 			on ia.next(): {ia.superstep(); state = State.one;}
 			on ia.ssm1(): {}
 			on ia.ssm2(): {}
 			on ia.subnext():{}		
-			on ifo.back(): {
+			on iReflector.back(): {
 				ia.superstep();
 				if (retvalue == RetValue.ok) // use return value from substate machine
 					state = State.one; 
@@ -68,7 +68,7 @@ component SSMPattern {
 		
 		[state.one] { //sub state machine1
 			
-			on ifo.entry(): {substate = Substate.a;}
+			on iReflector.entry(): {substate = Substate.a;}
 			
 			[substate.a] {
 				on ia.subnext(): {
@@ -82,13 +82,13 @@ component SSMPattern {
 					retvalue = RetValue.ok; // pass value to super state machine
 					substate = Substate.a;  // deep/shallow but also done at entry
 					state = State.three; 
-					ifo.exit();
+					iReflector.exit();
 				}
 			}	 
 		}
 		[state.two] { //sub state machine2
 			
-			on ifo.entry(): {substate = Substate.a;}
+			on iReflector.entry(): {substate = Substate.a;}
 			
 			[substate.a] {
 				on ia.subnext(): {
@@ -102,19 +102,19 @@ component SSMPattern {
 					retvalue = RetValue.nok; // pass value to super state machine
 					substate = Substate.a;   // deep/shallow but also done at entry
 					state = State.three; 
-					ifo.exit();
+					iReflector.exit();
 				}
 			}			 
 		}		
 	}
 }
 
-component FB {
-	provides IForwardBack ifb;
+component Reflector {
+	provides IReflector iReflector;
 	
 	behaviour {
-		on ifb.forward(): ifb.entry();
-		on ifb.exit(): ifb.back();		
+		on iReflector.forward(): iReflector.entry();
+		on iReflector.exit(): iReflector.back();		
 	}
 }
 
