@@ -48,7 +48,7 @@ Detected!
 siren on!
 ``` 
 
-With the modified runtime it look like:
+With the modified runtime it looks like:
 ```
 <external>.console.arm -> .alarm.console.arm [enter] [0, 0] (tid: 9288)
 sensor enabled (tid: 9288)
@@ -58,8 +58,8 @@ Detected! (tid: 9288)
 siren on! (tid: 9288)
 <external>.sensor.triggered <- .alarm.sensor.triggered [leave] [1, 1] (tid: 9288)
 ```
-
 Notice that the postfixed threadid is added in the main and is not part of the runtime modification.
+The modification is quite simple and is contained only in Runtime.hh, it can also be customized as desired.
 
 If the proposed changes in the code generation will be accepted and implemented the output could look like this:
 
