@@ -35,7 +35,7 @@ The information being output by dezyne models as of version 2.1.1-2.5.3 is compl
 However, if you want to read and understand the logging without cross-referencing it with a Dezyne model this is form is not ideal.
 There is an [ongoing discussion](https://github.com/janwilmans/DezyneSamples/issues/1) and effort to make the output coming from dezyne models customizable.
 
-A working prototype of a modified Runtime is available [here](https://github.com/janwilmans/DezyneSamples/blob/master/Alarm/dzn/runtime.hh)
+A working prototype of a modified Runtime is available [here](https://github.com/VerumSoftwareTools/DezyneCommunity/tree/master/logging/modified_runtime_cpp_2.5.3)
 
 Originally the output was:
 
@@ -60,6 +60,8 @@ siren on! (tid: 9288)
 ```
 Notice that the postfixed threadid is added in the main and is not part of the runtime modification.
 The modification is quite simple and is contained only in Runtime.hh, it can also be customized as desired.
+The change can be viewed (here)[https://github.com/VerumSoftwareTools/DezyneCommunity/commit/f4b331fc8e816efcef6c78cf574472a7d9ceddaf].
+
 
 If the proposed changes in the code generation will be accepted and implemented the output could look like this:
 
