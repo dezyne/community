@@ -1,6 +1,6 @@
 # Dezyne Community repository
 
-This repository is available to share anything related to Dezyne between Dezyne users 
+This repository is available to share anything related to Dezyne between Dezyne users. Dezyne is the Component Based, Model Driven Software Engineering tool made by Verum Software Tools B.V. (https://www.verum.com/)
 
 First of all, see https://www.verum.com/support/tutorials/ for the online tutorials and examples, they are really good to get you started!
 
