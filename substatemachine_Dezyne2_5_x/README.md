@@ -33,8 +33,9 @@ The exit works similarly but then everything mirrored.
 
 Below diagram shows depicts example with high level states 'one', 'two', 'three' and substates 'one_a', 'one_b' for SSM1 and 'two_a', 'two_b' for SSM2.
 In the corresponding DZN file the SSM state variable (with values 'a', 'b') is reused between the two SSMs since they are not active in parallel.
-The input event ssm1 is received in the super state machine and kicks of sub state machine1; similarly does event ssm2. With a subnext event a sub state machine takes a single step. Since both sub state machines have only 2 steps/states they reach their end immediately. At the end a substatemachine executes an exit which is forwarded to the super state machine.
-The input event next generates a state transition in the super state machine. The super state machines cycles through its 3 states continuously.
+
+The input event 'ssm1' is received in the super state machine and kicks of sub state machine1; similarly does event 'ssm2'. With a 'subnext' event a sub state machine takes a single step. Since both sub state machines have only 2 steps/states they reach their end immediately. At the end a substatemachine executes an 'exit' which is forwarded to the super state machine.
+The input event 'next' generates a state transition in the super state machine. The super state machines continuously toggles between states one and two. State three is entered upon return from a sub state machines (as defined in both sub state machines)
 
 ![](images/ssm.png)
 An UML like diagram would look like this. Notice that the Reflector port is only an implementation detail and not relevant in the design of the state machine hierarchy.
