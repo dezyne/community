@@ -8,8 +8,8 @@ Currently in Dezyne there is no syntax support for SSMs so the encapsulation is 
 Some processing might take place in the high level state machine and then be continued in the SSM before control is passed back
 * an exit of the SSM is captured in the high level state machine which might do some postprocessing
 * result values can be passed from a SSM to a higher level state machine by means of variables
-* by default the SSM retains the value of the state variable between activations (deep). In the example the SSM state variable is initialized
-on entry of the SSM and redundantly also on exit (shallow).
+* by default the SSM retains the value of the state variable between activations (deep history). 
+In the example the SSM state variable is initialized on entry of the SSM and redundantly also on exit (shallow history).
 In other words the designer has full control over the choice for deep/shallow state behaviour.
 
 ## Due to the fact there is no explicit syntax this example also shows some limitations:
@@ -29,8 +29,12 @@ subsequently some actions at SSM level before control is passed back
 
 The exit works similarly but then everything mirrored.
 
-Below diagram shows an example with high level states 'one', 'two', 'three' and substates 'one_a', 'one_b' for SSM1 and 'two_a', 'two_b' for SSM2.
+## Details on the example
+
+Below diagram shows depicts example with high level states 'one', 'two', 'three' and substates 'one_a', 'one_b' for SSM1 and 'two_a', 'two_b' for SSM2.
 In the corresponding DZN file the SSM state variable (with values 'a', 'b') is reused between the two SSMs since they are not active in parallel.
+The input event ssm1 is received in the super state machine and kicks of sub state machine1; similarly does event ssm2. With a subnext event a sub state machine takes a single step. Since both sub state machines have only 2 steps/states they reach their end immediately. At the end a substatemachine executes an exit which is forwarded to the super state machine.
+The input event next generates a state transition in the super state machine. The super state machines cycles through its 3 states continuously.
 
 ![](images/ssm.png)
 An UML like diagram would look like this. Notice that the Reflector port is only an implementation detail and not relevant in the design of the state machine hierarchy.
