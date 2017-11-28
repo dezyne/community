@@ -37,5 +37,5 @@ In the corresponding DZN file the SSM state variable (with values 'a', 'b') is r
 The super state machine can be initialized to its Idle state and is then receptive to commands to start either of its submachines. The input event 'ssm1' kicks of sub state machine1 and bring the super state machine to is Busy state; similarly does event 'ssm2'. With a 'subnext' event a sub state machine takes a single step. Since both sub state machines have only 2 steps/states they reach their end immediately. At the end a substatemachine executes an 'exit' which is forwarded to the super state machine. As a result the super state machine does a transition to 'Off' or 'Idle'.
 
 
-![](images/ssm.png)
+![](images/ssm2.png)
 An UML like diagram would look like this. Notice that the Reflector port is only an implementation detail and not relevant in the design of the state machine hierarchy.
