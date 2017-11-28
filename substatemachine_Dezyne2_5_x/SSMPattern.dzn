@@ -1,19 +1,31 @@
 interface IA {
-	in void next();		// step in super statemachine
+	in void init();		// activate super statemachine
 	in void ssm1();		// start of sub statemachine 1
 	in void ssm2();		// start of sub statemachine 2
 	in void subnext();	// step in sub statemachine *
-	out void superstep();
-	out void substep();
+	out void substep(); // some reporting back of sub state machine progress
 	
 	behaviour {
-		on next:{}
-		on next:superstep;
-		on ssm1: {}
-		on ssm2: {}
-		on subnext:{}
-		on subnext: substep;
-		on subnext: superstep;
+		enum State {Off, Idle, Busy};
+		State state = State.Off;
+		
+		[state.Off] {
+			on init: {state = State.Idle;}
+			on ssm1, ssm2, subnext: illegal;
+		}
+		[state.Idle] {
+			on init: illegal;
+			on ssm1: {state = State.Busy;}
+			on ssm2: {state = State.Busy;}
+			on subnext: illegal;
+		}
+		[state.Busy] {
+			on init: illegal;
+			on subnext:{state = State.Off;}
+			on subnext:{state = State.Idle;}
+			on subnext: substep;	
+			on ssm1, ssm2: illegal;
+		}
 	}
 }
 
@@ -35,45 +47,39 @@ component SSMPattern {
 	requires IReflector iReflector;
 	
 	behaviour {
-		enum Substate {a, b};		// used by both sub statemachines
-		enum State {one, two, three};
+		enum State {Off, Idle, Busy}; // super state machine states
+		enum Submachine {One, Two};	// to keep track which sub state machine is active
+		enum Substate {a, b};		// used by both sub state machines
 		enum RetValue {ok, nok};	// pass value back from sub- to super-SM
-		State state = State.one;
+		State state = State.Off;
+		Submachine submachine = Submachine.One;
 		Substate substate = Substate.a;
 		RetValue retvalue = RetValue.nok;
 		
-		[state.one] {
-			on ia.next(): {ia.superstep(); state = State.two;}
-			on ia.ssm1(): {iReflector.forward();}
-			on ia.ssm2(): {}
+		[state.Off] {
+			on ia.init(): {state = State.Idle;}
+//			on iReflector.back(): {}
+			
 		}		
-		[state.two] {
-			on ia.next(): {ia.superstep(); state = State.one;}	
-			on ia.ssm1(): {}
-			on ia.ssm2(): {iReflector.forward();}
+		[state.Idle] {
+			on ia.ssm1(): {state = State.Busy; submachine = Submachine.One; iReflector.forward();}
+			on ia.ssm2(): {state = State.Busy; submachine = Submachine.Two; iReflector.forward();}
 		}
-		[state.three] {
-			on ia.next(): {ia.superstep(); state = State.one;}
-			on ia.ssm1(): {}
-			on ia.ssm2(): {}
-			on ia.subnext():{}		
+		[state.Busy] {
 			on iReflector.back(): {
-				ia.superstep();
 				if (retvalue == RetValue.ok) // use return value from substate machine
-					state = State.one; 
+					state = State.Idle; 
 				else 
-					state = State.two; 
+					state = State.Off; 
 			}
 		}
 		
-		[state.one] { //sub state machine1
-			
+		//sub state machine1
+		[state.Busy] [submachine.One]{ 
 			on iReflector.entry(): {substate = Substate.a;}
-			
 			[substate.a] {
 				on ia.subnext(): {
 					ia.substep();
-					retvalue = RetValue.nok;
 					substate = Substate.b;
 				}
 			}
@@ -81,27 +87,25 @@ component SSMPattern {
 				on ia.subnext(): {
 					retvalue = RetValue.ok; // pass value to super state machine
 					substate = Substate.a;  // deep/shallow but also done at entry
-					state = State.three; 
 					iReflector.exit();
 				}
 			}	 
 		}
-		[state.two] { //sub state machine2
-			
+		
+		//sub state machine2
+		[state.Busy] [submachine.Two] { 
 			on iReflector.entry(): {substate = Substate.a;}
-			
 			[substate.a] {
 				on ia.subnext(): {
 					ia.substep();
-					retvalue = RetValue.ok;
 					substate = Substate.b;
 				}
 			}
 			[substate.b] {
 				on ia.subnext(): {
+//					state = State.Off; 
 					retvalue = RetValue.nok; // pass value to super state machine
 					substate = Substate.a;   // deep/shallow but also done at entry
-					state = State.three; 
 					iReflector.exit();
 				}
 			}			 
@@ -118,3 +122,9 @@ component Reflector {
 	}
 }
 
+/*
+ * substate machine could also change the state of the superstate machine directly as
+ * shown (commented out) in line 106. Note that then the iReflector.back arrives in the state.Off
+ * and needs to be caught there hence the (commented out) statement in line 61
+ * In that solution the complex mechanism to pass back a value to the superstate machine is superfluous
+ */
