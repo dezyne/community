@@ -34,7 +34,7 @@ The exit works similarly but then everything mirrored.
 Below diagram shows depicts this example with high level states 'Off', 'Idle', 'Busy' and substates 'one_a', 'one_b' for SSM1 and 'two_a', 'two_b' for SSM2.
 In the corresponding DZN file the SSM state variable (with values 'a', 'b') is reused between the two SSMs since they are not active in parallel.
 
-The super state machine can be initialized to its Idle state and is then receptive to commands to start either of its submachines. The input event 'ssm1' kicks of sub state machine1 and bring the super state machine to is Busy state; similarly does event 'ssm2'. With a 'subnext' event a sub state machine takes a single step. Since both sub state machines have only 2 steps/states they reach their end immediately. At the end a substatemachine executes an 'exit' which is forwarded to the super state machine. As a result the super state machine does a transition to 'Off' or 'Idle'.
+The super state machine can be initialized to its Idle state and is then receptive to commands to start either of its submachines. The input event 'ssm1' kicks of sub state machine1 and brings the super state machine to its Busy state; similarly does event 'ssm2'. With a 'subnext' event a sub state machine takes a single step. Since both sub state machines have only 2 steps/states they reach their end immediately. At the end a substatemachine executes an 'exit' which is forwarded to the super state machine. As a result the super state machine does a transition to 'Off' or 'Idle'.
 
 
 ![](images/ssm2.png)
