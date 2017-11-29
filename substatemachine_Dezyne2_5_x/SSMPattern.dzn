@@ -75,7 +75,7 @@ component SSMPattern {
 		}
 		
 		//sub state machine1
-		[state.Busy] [submachine.One]{ 
+		[state.Busy && submachine.One] { 
 			on iReflector.entry(): {substate = Substate.a;}
 			[substate.a] {
 				on ia.subnext(): {
@@ -93,7 +93,7 @@ component SSMPattern {
 		}
 		
 		//sub state machine2
-		[state.Busy] [submachine.Two] { 
+		[state.Busy && submachine.Two] { 
 			on iReflector.entry(): {substate = Substate.a;}
 			[substate.a] {
 				on ia.subnext(): {
