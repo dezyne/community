@@ -1,0 +1,21 @@
+@startuml
+scale 350 width
+[*] --> Off
+
+state Off {
+  Off --> Idle : ia.init
+}
+
+state Idle {
+}  
+
+state Busy {
+  Idle --> one_A : ia.ssm1
+  one_A --> one_B : ia.subnext
+  one_B --> Idle : ia.subnext
+
+  Idle --> two_A : ia.ssm2
+  two_A --> two_B : ia.subnext
+  two_B --> Idle : ia.subnext
+}
+@enduml
