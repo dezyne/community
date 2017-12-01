@@ -7,7 +7,7 @@ Currently in Dezyne there is no syntax support for SSMs so the encapsulation is 
 * an event arrives in the high level state machine and is forwarded to a SSM. 
 Some processing might take place in the high level state machine and then be continued in the SSM before control is passed back
 * an exit of the SSM is captured in the high level state machine which might do some postprocessing
-* the required port Resource is shared by both sub state machines
+* the requires port IResource is shared by both sub state machines
 * by default the SSM retains the value of the state variable between activations (deep history). 
 In the example the SSM state variable is initialized back to its 'Idle' state on exit (shallow history).
 In other words the designer has full control over the choice for deep/shallow state behaviour.
