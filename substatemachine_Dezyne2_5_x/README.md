@@ -7,10 +7,11 @@ Currently in Dezyne there is no syntax support for SSMs so the encapsulation is 
 * an event arrives in the high level state machine and is forwarded to a SSM. 
 Some processing might take place in the high level state machine and then be continued in the SSM before control is passed back
 * an exit of the SSM is captured in the high level state machine which might do some postprocessing
-* result values can be passed from a SSM to a higher level state machine by means of variables
+* the required port Resource is shared by both sub state machines
 * by default the SSM retains the value of the state variable between activations (deep history). 
-In the example the SSM state variable is initialized on entry of the SSM and redundantly also on exit (shallow history).
+In the example the SSM state variable is initialized back to its 'Idle' state on exit (shallow history).
 In other words the designer has full control over the choice for deep/shallow state behaviour.
+* result values could be passed from a SSM to a higher level state machine by means of local variables or dedicated output events could be used
 
 ## Due to the fact there is no explicit syntax this example also shows some limitations:
 * we would like to add scoping to the variables but currently everything can only be global within the component.
@@ -31,10 +32,10 @@ The exit works similarly but then everything mirrored.
 
 ## Details on the example
 
-Below diagram shows depicts this example with high level states 'Off', 'Idle', 'Busy' and substates 'one_a', 'one_b' for SSM1 and 'two_a', 'two_b' for SSM2.
-In the corresponding DZN file the SSM state variable (with values 'a', 'b') is reused between the two SSMs since they are not active in parallel.
+Below diagram shows depicts this example with high level states 'Off', 'Idle', 'Busy' and substates 'one_A', 'one_B' for SSM1 and 'two_A', 'two_B' for SSM2.
+In the corresponding DZN file the SSM state variable (with values 'Idle", 'A', 'B') is reused between the two SSMs since they are not active in parallel. The sub state machines are only active in the 'Busy' state of the superstate machine hence the corresponding guard statement.
 
-The super state machine can be initialized to its Idle state and is then receptive to commands to start either of its submachines. The input event 'ssm1' kicks of sub state machine1 and brings the super state machine to its Busy state; similarly does event 'ssm2'. With a 'subnext' event a sub state machine takes a single step. Since both sub state machines have only 2 steps/states they reach their end immediately. At the end a substatemachine executes an 'exit' which is forwarded to the super state machine. As a result the super state machine does a transition to 'Off' or 'Idle'.
+The super state machine can be initialized to its Idle state and is then receptive to commands to start either of its submachines. The input event 'ssm1' kicks of sub state machine1 and brings the super state machine to its Busy state; similarly does event 'ssm2'. The sub state machine does an action on the shared Resource. After the Resource responds with 'done' it moves to a next state and does another action on the Resource. Since both sub state machines have only 2 steps/states they reach their end after another 'done' from the Resource. At the end a substatemachine executes an 'exit' which is forwarded to the super state machine. As a result the super state machine does a transition to 'Idle'.
 
 
 ![](images/ssm2.png)
