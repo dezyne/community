@@ -2,8 +2,8 @@ interface IA {
 	in void init();		// activate super statemachine
 	in void ssm1();		// start of sub statemachine 1
 	in void ssm2();		// start of sub statemachine 2
-	in void subnext();	// step in sub statemachine *
-	out void substep(); // some reporting back of sub state machine progress
+	out void substep(); // intermediate reporting back of SSM progress
+	out void ssmDone(); // report completion of SSM;
 	
 	behaviour {
 		enum State {Off, Idle, Busy};
@@ -11,20 +11,37 @@ interface IA {
 		
 		[state.Off] {
 			on init: {state = State.Idle;}
-			on ssm1, ssm2, subnext: illegal;
+			on ssm1, ssm2: illegal;
 		}
 		[state.Idle] {
 			on init: illegal;
 			on ssm1: {state = State.Busy;}
 			on ssm2: {state = State.Busy;}
-			on subnext: illegal;
 		}
 		[state.Busy] {
 			on init: illegal;
-			on subnext:{state = State.Off;}
-			on subnext:{state = State.Idle;}
-			on subnext: substep;	
 			on ssm1, ssm2: illegal;
+			on inevitable: {ssmDone; state = State.Idle;}
+			on optional: substep;
+		}
+	}
+}
+
+interface IResource {
+	in void doX();
+	in void doY();
+	in void doZ();
+	out void done();
+	
+	behaviour {
+		enum State {Idle, Busy};
+		State state = State.Idle;
+		[state.Idle] {
+			on doX, doY, doZ: {state = State.Busy;}	
+		}
+		[state.Busy] {
+			on doX, doY, doZ: illegal;
+			on inevitable: {done; state = State.Idle;}	
 		}
 	}
 }
@@ -44,87 +61,73 @@ interface IReflector {
 
 component SSMPattern {
 	provides IA ia;
-	requires IReflector iReflector;
+	requires IResource iresource;
+	requires IReflector ireflector;
 	
 	behaviour {
 		enum State {Off, Idle, Busy}; // super state machine states
 		enum Submachine {One, Two};	// to keep track which sub state machine is active
-		enum Substate {a, b};		// used by both sub state machines
-		enum RetValue {ok, nok};	// pass value back from sub- to super-SM
+		enum Substate {Idle, A, B};		// used by both sub state machines
 		State state = State.Off;
 		Submachine submachine = Submachine.One;
-		Substate substate = Substate.a;
-		RetValue retvalue = RetValue.nok;
+		Substate substate = Substate.Idle;
 		
 		[state.Off] {
 			on ia.init(): {state = State.Idle;}
-//			on iReflector.back(): {}
 			
 		}		
 		[state.Idle] {
-			on ia.ssm1(): {state = State.Busy; submachine = Submachine.One; iReflector.forward();}
-			on ia.ssm2(): {state = State.Busy; submachine = Submachine.Two; iReflector.forward();}
+			on ia.ssm1(): {state = State.Busy; submachine = Submachine.One; ireflector.forward();}
+			on ia.ssm2(): {state = State.Busy; submachine = Submachine.Two; ireflector.forward();}
 		}
 		[state.Busy] {
-			on iReflector.back(): {
-				if (retvalue == RetValue.ok) // use return value from substate machine
-					state = State.Idle; 
-				else 
-					state = State.Off; 
+			on ireflector.back(): {
+				ia.ssmDone();
+				state = State.Idle; 
 			}
 		}
 		
 		//sub state machine1
-		[state.Busy && submachine.One] { 
-			on iReflector.entry(): {substate = Substate.a;}
-			[substate.a] {
-				on ia.subnext(): {
-					ia.substep();
-					substate = Substate.b;
-				}
+		[state.Busy && submachine.One] {
+			[substate.Idle] on ireflector.entry(): {
+				iresource.doX();
+				substate = Substate.A;
 			}
-			[substate.b] {
-				on ia.subnext(): {
-					retvalue = RetValue.ok; // pass value to super state machine
-					substate = Substate.a;  // deep/shallow but also done at entry
-					iReflector.exit();
-				}
+			[substate.A] on iresource.done(): {
+				ia.substep();
+				iresource.doY();
+				substate = Substate.B;
+			}
+			[substate.B] on iresource.done(): {
+				ireflector.exit();
+				substate = Substate.Idle;
 			}	 
 		}
 		
 		//sub state machine2
 		[state.Busy && submachine.Two] { 
-			on iReflector.entry(): {substate = Substate.a;}
-			[substate.a] {
-				on ia.subnext(): {
-					ia.substep();
-					substate = Substate.b;
-				}
+			[substate.Idle] on ireflector.entry(): {
+				iresource.doY();
+				substate = Substate.A;
 			}
-			[substate.b] {
-				on ia.subnext(): {
-//					state = State.Off; 
-					retvalue = RetValue.nok; // pass value to super state machine
-					substate = Substate.a;   // deep/shallow but also done at entry
-					iReflector.exit();
-				}
+			[substate.A] on iresource.done(): {
+				ia.substep();
+				iresource.doX();
+				substate = Substate.B;
+			}
+			[substate.B] on iresource.done(): {
+				ireflector.exit();
+				substate = Substate.Idle; 
 			}			 
 		}		
 	}
 }
 
 component Reflector {
-	provides IReflector iReflector;
+	provides IReflector ireflector;
 	
 	behaviour {
-		on iReflector.forward(): iReflector.entry();
-		on iReflector.exit(): iReflector.back();		
+		on ireflector.forward(): ireflector.entry();
+		on ireflector.exit(): ireflector.back();		
 	}
 }
-
-/*
- * substate machine could also change the state of the superstate machine directly as
- * shown (commented out) in line 106. Note that then the iReflector.back arrives in the state.Off
- * and needs to be caught there hence the (commented out) statement in line 61
- * In that solution the complex mechanism to pass back a value to the superstate machine is superfluous
- */
