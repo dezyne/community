@@ -31,12 +31,14 @@ These 2 directories also contain include files that must become findable by the 
 Edit the project properties and add these directories.
 You can do it for both the C and C++ compiler (whether you want to work in C or C++ or both if you use a mixture).
 While adding them make sure you select the workspace as root of the path.
+
 ![](Arduino_project_setup2.jpg)
 Figure 2: include directories settings
 
 To keep the generated code as small as possible you can add an undocumented flag (Tiny-C) to the compiler settings.
 You can see its usage in the runtime files.
-![](Arduino_project_setup3.jpg)
+
+![](Arduino_project_setup3.png)
 Figure 3: add Tiny-C compile flag
 
 # Code generation
