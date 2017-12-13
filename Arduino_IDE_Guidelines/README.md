@@ -24,7 +24,7 @@ When generating code in a Dezyne project select this location to generate the so
 Arduino IDE then automatically keeps track of those files and maintains the proposer build dependencies.
 This is the resulting project explorer view in Eclipse:
 
-![](Arduino_project_setup1.jpg)
+![](Arduino_project_setup1.png)
 Figure 1: project explorer view
  
 These 2 directories also contain include files that must become findable by the compiler. 
@@ -32,7 +32,7 @@ Edit the project properties and add these directories.
 You can do it for both the C and C++ compiler (whether you want to work in C or C++ or both if you use a mixture).
 While adding them make sure you select the workspace as root of the path.
 
-![](Arduino_project_setup2.jpg)
+![](Arduino_project_setup2.png)
 Figure 2: include directories settings
 
 To keep the generated code as small as possible you can add an undocumented flag (Tiny-C) to the compiler settings.
