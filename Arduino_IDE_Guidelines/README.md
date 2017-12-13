@@ -1,10 +1,10 @@
-##Install the Arduino plugin
+# Install the Arduino plugin
 
 In Dezyne goto menu item 'help', 'welcome'.
 On the welcome page select 'Third party tools'
 Select install and follow the steps of the installer
 
-##Create a new project
+# Create a new project
 
 Select new, project, Arduino Sketch, next
 (in the Arduino perspective this can be done in one step)
@@ -13,7 +13,7 @@ Select 'Default cpp file', finish
 
 The first time you might prefer to start from an example.
 
-##Configure the project
+# Configure the project
 
 If you want you can put all source files in the main directory of the project. 
 However, it quickly becomes crowded so it makes sense to separate some parts in subdirectories. 
@@ -35,7 +35,7 @@ To keep the generated code as small as possible you can add an undocumented flag
 You can see its usage in the runtime files.
 IM 
 
-##Code generation
+# Code generation
 Code generation needs to be done in ”C”, whereas most hardware drivers (and the Serial driver, for
 trace output) for the Arduino are coded in C++. A way to work around this is to:
 1) Create an additional C file that does dzn run time initialization, and implements the callback
@@ -43,7 +43,7 @@ functions.
 2) In your main CPP file (that contains the setup() and loop() functions) define a C function that in
 their turn calls the C++ functions. 
 
-##Closing remarks
+# Closing remarks
 before you can upload to your board you must ensure to have the right USB drivers installed. There is ample info on the web.
 See Arduino-IDE (Sloeber) documentation how to use the serail monitor etc.
 
