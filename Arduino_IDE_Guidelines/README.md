@@ -59,7 +59,7 @@ their turn calls the C++ functions.
 Before you can upload to your board you must ensure to have the right USB drivers installed. 
 There is ample info on the web.
 
-See Arduino-IDE (Sloeber) documentation how to use the serail monitor etc.
+See Arduino-IDE (Sloeber) documentation how to use the serial monitor etc.
 
 
 
