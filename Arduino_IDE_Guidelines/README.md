@@ -62,7 +62,7 @@ There is ample info on the web.
 See Arduino-IDE (Sloeber) documentation how to use the serial monitor etc.
 
 NB support for C code generation has temporarily been discontinued in Dezyne because the code generators get a major refactor. Choose version 2.4.1 of Dezyne to still have access to the C code generator.
-
+![](Dezyne_settings.png)
 
 
 
