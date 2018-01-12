@@ -48,12 +48,12 @@ You can see its usage in the runtime files.
 Figure 3: add Tiny-C compile flag
 
 # Code generation
-Code generation needs to be done in ”C”, whereas most hardware drivers (and the Serial driver, for
-trace output) for the Arduino are coded in C++. A way to work around this is to:
-1) Create an additional C file that does dzn run time initialization, and implements the callback
+Dezyne Code generation needs to be done in ”C” because the Dezyne C++ runtime uses STL which is not available for Arduino.
+Hardware drivers (and the Serial driver, for trace output) for the Arduino will in general be coded in C++. 
+A way to work around this is to:
+1) Create an additional C file that does dzn run time initialization, and implements the Dezyne callback
 functions.
-2) In your main CPP file (that contains the setup() and loop() functions) define a C function that in
-their turn calls the C++ functions. 
+2) In your Arduino main CPP file (that contains the setup() and loop() functions) define C++ functions that call the Dezyne C functions. 
 
 # Closing remarks
 Before you can upload to your board you must ensure to have the right USB drivers installed. 
