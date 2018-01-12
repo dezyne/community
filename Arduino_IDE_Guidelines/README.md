@@ -61,6 +61,8 @@ There is ample info on the web.
 
 See Arduino-IDE (Sloeber) documentation how to use the serial monitor etc.
 
+Take care with using RAM and stack. You will not get any warning by compiler or loader. By default also serial output strings are stored in RAM. This can be avoided with the PROGMEM qualifier: https://www.arduino.cc/reference/en/language/variables/utilities/progmem/
+
 NB support for C code generation has temporarily been discontinued in Dezyne because the code generators get a major refactor. Choose "dzn service version" 2.4.1 to still have access to the C code generator.
 ![](Dezyne_settings.png)
 
