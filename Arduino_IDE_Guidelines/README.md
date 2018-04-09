@@ -66,5 +66,8 @@ Take care with using RAM and stack. You will not get any warning by compiler or 
 NB support for C code generation has temporarily been discontinued in Dezyne because the code generators get a major refactor. Choose "dzn service version" 2.4.1 to still have access to the C code generator.
 ![](Dezyne_settings.png)
 
+# Example
+See the Dezyne & Source code files in this directory. This is a simple working example on an Arduino Robot Kit. This kit can be obtained from ebay or alibaba, e.g.
+https://nl.aliexpress.com/item/Obstacle-Avoidance-Anti-drop-Smart-Car-Robot-Kit-for-Arduino-Free-Shipping/32730548433.html?spm=a2g0s.8937460.0.0.6AcbDx
 
 
