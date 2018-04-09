@@ -1,0 +1,337 @@
+
+extern double $double$;
+
+component Robot
+{
+	provides RobotControl robotControl;
+	requires LineDetected lineDetected;
+	requires WallDetected wallDetected;
+	requires WallDetectorServo wdServo;
+	
+	system {
+		WallDetector wallDetector;
+		LineDetector lineDetector;
+		MotionController motionController;
+		RobotController robotController;
+		
+		Motor mLeft;
+		Motor mRight;
+		
+		robotControl <=> robotController.robotControl;
+		
+		robotController.motionControl <=> motionController.motionControl;
+		robotController.lineDetection <=> lineDetector.lineDetection; 
+		robotController.wallDetection <=> wallDetector.wallDetection; 
+		
+		motionController.motorLeft <=> mLeft.hardware;
+		motionController.motorRight <=> mRight.hardware;
+		
+		lineDetector.lineDetected <=> lineDetected; 
+		wallDetector.wallDetected <=> wallDetected; 
+		wallDetector.wdServo <=> wdServo;	}
+}
+
+interface RobotControl {
+	in void start();
+	
+	behaviour {
+		on start: {}
+	}
+}
+
+component RobotController {
+	provides RobotControl robotControl;
+	
+	requires LineDetection lineDetection;
+	requires WallDetection wallDetection;
+	requires MotionControl motionControl;
+	
+	behaviour {
+		enum Direction {Unitialized, Left, Right, Straight};
+		bool Safe2Go = true;
+		Direction direction = Direction.Straight;
+
+		void GoStraight() {
+			direction = Direction.Straight;
+			wallDetection.lookStraight();
+			motionControl.forward(); 
+		}
+		void GoLeft() {
+			direction = Direction.Left;
+			wallDetection.lookLeft();
+			motionControl.left(); 
+		}
+		void GoRight() {
+			direction = Direction.Right;
+			wallDetection.lookRight();
+			motionControl.right(); 
+		}
+		
+		on wallDetection.danger(): {
+			[Safe2Go] {motionControl.stop(); Safe2Go = false;}
+		}
+		[direction.Straight] {
+			[Safe2Go] {
+				on robotControl.start(): {GoStraight();}
+				on lineDetection.Left(): {GoLeft();}
+				on lineDetection.Right(): {GoRight();}
+			}
+			[!Safe2Go] {
+				on robotControl.start(): {}
+				on lineDetection.Left(): {direction = Direction.Left;}
+				on lineDetection.Right(): {direction = Direction.Right;}
+				on wallDetection.noDanger(): {GoStraight(); Safe2Go = true;}				
+			}
+		}		
+		[direction.Left] {
+			[Safe2Go] {
+				on robotControl.start(): {GoLeft();}
+				on lineDetection.Straight(): {GoStraight();}
+				on lineDetection.Right(): {GoRight();}
+			}			
+			[!Safe2Go] {
+				on robotControl.start(): {}
+				on lineDetection.Straight(): {direction = Direction.Straight;}			
+				on lineDetection.Right(): {direction = Direction.Right;}
+				on wallDetection.noDanger(): {GoLeft(); Safe2Go = true;}				
+			}
+		}		
+		[direction.Right] {
+			[Safe2Go] {
+				on robotControl.start(): {GoRight();}
+				on lineDetection.Left(): {GoLeft();}
+				on lineDetection.Straight(): {GoStraight();}			
+			}
+			[!Safe2Go] {
+				on robotControl.start(): {}
+				on lineDetection.Left(): {direction = Direction.Left;}
+				on lineDetection.Straight(): {direction = Direction.Straight;}			
+				on wallDetection.noDanger(): {GoRight(); Safe2Go = true;}				
+			}
+		}
+	}
+} 
+
+// filter detection events that do not change the status
+component WallDetector
+{
+	provides WallDetection wallDetection;
+	requires WallDetected wallDetected;
+	requires WallDetectorServo wdServo;
+	
+	behaviour
+	{
+	    enum State { danger, noDanger };
+	    State state = State.noDanger;
+	   
+		on wallDetection.init() : {}
+		on wallDetection.lookLeft(): wdServo.lookLeft();
+		on wallDetection.lookRight(): wdServo.lookRight();
+		on wallDetection.lookStraight(): wdServo.lookStraight();
+		
+	    [state.noDanger]
+	    {
+	    	on wallDetected.danger() : { wallDetection.danger();  state = State.danger; }
+	    	on wallDetected.noDanger(): {}
+	    }
+	    
+	    [state.danger]
+	    {
+	    	on wallDetected.danger() : {}
+			on wallDetected.noDanger() : {wallDetection.noDanger(); state = State.noDanger; }
+	    }
+	}
+}
+
+interface WallDetection
+{
+	in void init();
+	out void danger();
+	out void noDanger();
+	in void lookLeft();
+	in void lookRight();
+	in void lookStraight();
+	
+	behaviour 
+	{
+	    enum State { danger, noDanger };
+	    State state = State.noDanger;
+
+		on init: {}
+		on lookLeft: {}
+		on lookRight: {}
+		on lookStraight: {}
+
+		[state.danger] {
+			on inevitable: {noDanger; state = State.noDanger;}	
+		}
+		[state.noDanger] {
+			on inevitable: {danger; state = State.danger;}
+		}
+	}
+}
+
+interface WallDetected
+{
+	in void init();
+	out void danger();
+	out void noDanger();
+	
+	behaviour 
+	{
+		on init: {}
+		on inevitable: danger;
+		on inevitable: noDanger;
+	}
+}
+
+interface WallDetectorServo
+{
+	in void lookLeft();
+	in void lookRight();
+	in void lookStraight();
+	
+	behaviour {
+		on lookLeft: {}
+		on lookRight: {}
+		on lookStraight: {}
+	}
+}
+
+interface LineDetection
+{
+	in void init();
+	out void Left();
+	out void Right();
+	out void Straight();
+	
+	behaviour 
+	{
+		enum Direction {Left, Right, Straight};
+		Direction direction = Direction.Straight;
+
+		on init: {}
+		[direction.Straight] {
+			on optional: {Left; direction = Direction.Left;}
+			on optional: {Right; direction = Direction.Right;}
+		}
+		[direction.Left] {
+			on optional: {Right; direction = Direction.Right;}
+			on optional: {Straight; direction = Direction.Straight;}
+		}
+		[direction.Right] {
+			on optional: {Left; direction = Direction.Left;}
+			on optional: {Straight; direction = Direction.Straight;}
+		}
+	}
+}
+
+interface LineDetected
+{
+	in void init();
+	out void Left();
+	out void Right();
+	out void Straight();
+	
+	behaviour 
+	{
+		on init: {}
+		on optional: Left;
+		on optional: Right;
+		on optional: Straight;
+	}
+}
+
+component LineDetector {
+	provides LineDetection lineDetection;
+	requires LineDetected lineDetected;
+	
+	behaviour {
+		enum Direction {Left, Right, Straight};
+		Direction direction = Direction.Straight;
+		
+		on lineDetection.init() : {}
+		// only pass on any changes
+		[direction.Straight] {
+			on lineDetected.Left(): {lineDetection.Left(); direction = Direction.Left;}
+			on lineDetected.Right(): {lineDetection.Right(); direction = Direction.Right;}
+			on lineDetected.Straight(): {}
+		}	
+		[direction.Left] {
+			on lineDetected.Left(): {}
+			on lineDetected.Right(): {lineDetection.Right(); direction = Direction.Right;}
+			on lineDetected.Straight(): {lineDetection.Straight(); direction = Direction.Straight;}
+		}
+		[direction.Right] {
+			on lineDetected.Left(): {lineDetection.Left(); direction = Direction.Left;}
+			on lineDetected.Right(): {}
+			on lineDetected.Straight(): {lineDetection.Straight(); direction = Direction.Straight;}
+		}
+	}
+}
+
+// Motor1 should be on the right side and Motor2 should be on the left. 
+component MotionController
+{
+	provides MotionControl motionControl;
+
+	requires MotorControl motorLeft;
+	requires MotorControl motorRight;
+	
+	
+	behaviour
+	{
+  		on motionControl.forward(): { motorRight.forward(); motorLeft.forward(); }
+  		on motionControl.backward(): { motorRight.backward(); motorLeft.backward(); }
+  		on motionControl.left(): { motorRight.forward(); motorLeft.backward(); }
+  		on motionControl.right(): { motorRight.backward(); motorLeft.forward(); }
+  		on motionControl.stop(): { motorRight.stop(); motorLeft.stop(); }
+	}
+}
+
+interface MotionControl
+{
+  in void forward();
+  in void backward();
+  in void left();
+  in void right();
+  in void stop();
+  
+  behaviour
+  {
+  	on forward: {}
+  	on backward: {}
+  	on left: {}
+  	on right: {}
+  	on stop: {}
+  }
+}
+
+interface MotorControl
+{
+  in void forward();
+  in void backward();
+  in void stop();
+  in void sleep();
+
+  behaviour
+  {
+	on forward: {}
+	on backward: {}
+	on stop: {}
+	on sleep: {}
+  }
+}
+
+component Motor
+{
+  provides MotorControl hardware;
+	
+  behaviour
+  {
+  	on hardware.forward(): {}
+  	on hardware.backward(): {}
+  	on hardware.stop(): {}
+  	on hardware.sleep(): {}
+  }
+}
