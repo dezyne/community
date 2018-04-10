@@ -48,6 +48,8 @@ You can see its usage in the runtime files.
 Figure 3: add Tiny-C compile flag
 
 # Code generation
+You will now have 2 separate but related projects in the workspace: a Dezyne project and an Arduino project. You must generate code from the Dezyne project into the Arduino project.
+
 Dezyne Code generation needs to be done in ”C” because the Dezyne C++ runtime uses STL which is not available for Arduino.
 Hardware drivers (and the Serial driver, for trace output) for the Arduino will in general be coded in C++. 
 A way to work around this is to:
