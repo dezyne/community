@@ -71,3 +71,10 @@ See the Dezyne & Source code files in this directory. This is a simple working e
 https://nl.aliexpress.com/item/Obstacle-Avoidance-Anti-drop-Smart-Car-Robot-Kit-for-Arduino-Free-Shipping/32730548433.html?spm=a2g0s.8937460.0.0.6AcbDx
 
 ![](ArduinoRobot.png)
+
+Create a Dezyne project and put the .dzn file there.
+Also create an Arduino project and put the 4 source files there.
+
+After downloading the runtime and generating code from the Dezyne project as described above, the Arduino project workspace shows following filestructure:
+![](ArduinoFiles.png)
+
