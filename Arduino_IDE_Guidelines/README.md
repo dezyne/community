@@ -81,3 +81,4 @@ After downloading the runtime and generating code from the Dezyne project as des
 
 ![](ArduinoFiles.png)
 
+The Robot is reliable in its wall detection. The line tracking is rudimentary. Main purpose of the example is to show the full path from Dezyne towards embedded code on an Arduino including mapping from C to C++ and vice versa.
