@@ -4,6 +4,10 @@ This repository is available to share anything related to Dezyne between Dezyne 
 
 First of all, see https://www.verum.com/support/tutorials/ for the online tutorials and examples, they are really good to get you started!
 
+# Arduino
+
+[Arduino_IDE_Guidelines page](https://github.com/VerumSoftwareTools/DezyneCommunity/tree/master/Arduino_IDE_Guidelines) describes an example of an Arduino based project including settings in the tool and example code.
+
 # Armours
 
 [The Errors and armours page](https://github.com/VerumSoftwareTools/DezyneCommunity/tree/master/Error_situations_and_armours) describes error situations for which armouring could be applied and provides examples of such Armours.
