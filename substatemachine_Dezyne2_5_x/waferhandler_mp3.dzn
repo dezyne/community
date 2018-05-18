@@ -1,0 +1,312 @@
+/*
+ * waferhandler example showing shared resources in substatemachines
+ * 2 statemachines first modeled in separate components (PPU and UPP)
+ * were merged into one (WL) by using prefixes
+ * it is highly simplyfied and the seemingly parallel handling 
+ * of 2 batches is in fact serial
+ */
+
+interface ITrigger
+{
+  in void trigger();
+  out void notify();
+
+  behaviour
+  {
+    bool idle = true;
+    [idle] on trigger: {idle = !idle;}
+    [!idle] {
+      on inevitable: {idle = !idle; notify;}
+      on trigger: illegal;
+    }
+  }
+}
+
+
+interface IRobot
+{
+  in void prepare();  // await becoming ready
+  in void finish();   // allow next request, next request might be delayed if Transfer is finishing
+  out void ready();   // last request has completed
+
+  behaviour
+  {
+    enum POSITION {IDLE, DST};
+    POSITION pos = POSITION.IDLE;
+
+    bool idle = true;
+
+    [!idle] {
+      on inevitable: {idle = true; ready;}
+      on prepare, finish: illegal;
+    }
+    [idle && pos.IDLE] {
+      on prepare: {idle = false; pos = POSITION.DST;}
+      on finish: illegal;
+    }
+    [idle && pos.DST] {
+      on finish: {pos = POSITION.IDLE;}
+      on prepare: illegal;
+    }
+  }
+}
+
+interface ISlotPort
+{
+  in void prepare();  // await becoming ready
+  in void finish();   // allow next request, next request might be delayed if Transfer is finishing
+  out void ready();   // last request has completed
+
+  behaviour
+  {
+    enum STATE {IDLE, PREPARING, READY};
+    STATE state = STATE.IDLE;
+
+    [state.IDLE] {
+      on prepare: {state = STATE.PREPARING;}
+      on finish: illegal;
+    }
+
+    [state.PREPARING] {
+      on inevitable: {state = STATE.READY; ready;}
+      on prepare, finish: illegal;
+    }
+
+    [state.READY] {
+      on finish: state = STATE.IDLE;
+      on prepare: illegal;
+    }
+  }
+}
+
+interface IBatch
+{
+  in void start();
+  out void finished();
+
+  behaviour
+  {
+    enum STATE {IDLE, BUSY};
+    STATE state = STATE.IDLE;
+
+    [state.IDLE]
+    {
+      on start: {state = STATE.BUSY;}
+    }
+    [state.BUSY]
+    {
+      on start /*, resume*/: illegal;
+      on inevitable: {state = STATE.IDLE; finished;}
+    }
+  }
+}
+
+interface Upto12
+{
+  enum NEXT {PPU, UPP, DONE};
+  in NEXT next();
+
+  behaviour
+  {
+    subint count {0..12};
+    count c = 0;
+    [c < 12] on next: {c = c + 1; reply(NEXT.PPU);}
+    [c == 0] on next: reply(NEXT.DONE);
+    [c > 0] on next: {c = c - 1; reply(NEXT.UPP);}
+  }
+}
+
+component PPU
+{
+  provides IBatch batch;
+
+  requires ISlotPort loadport;
+  requires ISlotPort prealigner;
+  requires IRobot robot;
+
+  behaviour
+  {
+    enum STATE {IDLE, PREPARING, LOADING_PREALIGNER};
+    STATE state = STATE.IDLE;
+    bool cont = false;
+
+    [state.IDLE] on batch.start(): {
+      state = STATE.PREPARING;
+      loadport.prepare();
+      robot.prepare();
+    }
+
+    [state.PREPARING] {
+      [!cont] {
+        on loadport.ready(),robot.ready():{cont = true;}
+      }
+      [cont] {
+        on loadport.ready(),robot.ready():{cont = false; state = STATE.LOADING_PREALIGNER; prealigner.prepare();}
+      }
+    }
+    [state.LOADING_PREALIGNER] {
+      on prealigner.ready(): {state = STATE.IDLE; loadport.finish(); robot.finish(); prealigner.finish(); batch.finished();}
+    }
+  }
+}
+
+component UPP
+{
+  provides IBatch batch;
+
+  requires ISlotPort loadport;
+  requires ISlotPort prealigner;
+  requires IRobot robot;
+
+  behaviour
+  {
+    enum STATE {IDLE, PREPARING, LOADING_LOADPORT};
+    STATE state = STATE.IDLE;
+    bool cont = false;
+
+    [state.IDLE] on batch.start(): {
+      state = STATE.PREPARING;
+      prealigner.prepare();
+      robot.prepare();
+    }
+
+    [state.PREPARING] {
+      [!cont] {
+        on prealigner.ready(),robot.ready():{cont = true;}
+      }
+      [cont] {
+        on prealigner.ready(),robot.ready():{cont = false; state = STATE.LOADING_LOADPORT; loadport.prepare();}
+      }
+    }
+    [state.LOADING_LOADPORT] {
+      on loadport.ready(): {state = STATE.IDLE; prealigner.finish(); robot.finish(); loadport.finish(); batch.finished();}
+    }
+  }
+}
+
+component WL
+{
+  provides IBatch batch;
+
+  requires Upto12 upto12;
+  requires ITrigger trigger1;
+  requires ITrigger trigger2;
+
+  requires ISlotPort loadport;
+  requires ISlotPort prealigner;
+  requires IRobot robot;
+
+
+  behaviour
+  {
+    enum SUB {S_WL, S_PPU, S_UPP};
+    SUB sub = SUB.S_WL;
+    bool wl_idle = true;
+
+    enum PP_STATE {IDLE, PREPARING, PREPARING_CONT, LOADING};
+    PP_STATE ppu_state = PP_STATE.IDLE;
+    bool ppu_wait = false;
+
+    PP_STATE upp_state = PP_STATE.IDLE;
+    bool upp_wait = false;
+
+    bool trigger_pending1 = false;
+    bool trigger_pending2 = false;
+    bool done = false;
+
+    void wl_f() {
+      sub = SUB.S_WL;
+
+      if (!done) {
+        Upto12.NEXT r1 = upto12.next();
+        if(r1.PPU) ppu_start();
+        else if(r1.UPP) upp_start();
+        else {done = true; trigger_pending1 = true; trigger1.trigger();}
+      }
+
+      if (!done) {
+        Upto12.NEXT r2 = upto12.next();
+        if(r2.PPU) ppu_start();
+        else if(r2.UPP) upp_start();
+        else {done = true; trigger_pending2 = true; trigger2.trigger();}
+      }
+    }
+
+    void ppu_start()
+    {
+      if(ppu_state.IDLE && upp_state.IDLE) {
+        ppu_wait = false;
+        sub = SUB.S_PPU;
+        ppu_state = PP_STATE.PREPARING;
+        loadport.prepare();
+        robot.prepare();
+      } else ppu_wait = true;
+    }
+
+    void upp_start()
+    {
+      if(ppu_state.IDLE && upp_state.IDLE) {
+        upp_wait = false;
+        sub = SUB.S_UPP;
+        upp_state = PP_STATE.PREPARING;
+        prealigner.prepare();
+        robot.prepare();
+      } else upp_wait = true;
+    }
+
+    void restart()
+    {
+      if(!done) {
+        if(ppu_wait) ppu_start();
+        if(upp_wait) upp_start();
+      }
+    }
+
+    on trigger1.notify(): {
+      trigger_pending1 = false;
+      if(!trigger_pending2) {
+        sub = SUB.S_WL;
+        wl_idle = true; batch.finished(); done = false;
+      }
+    }
+    on trigger2.notify(): {
+      trigger_pending2 = false;
+      if(!trigger_pending1) {
+        sub = SUB.S_WL;
+        wl_idle = true; batch.finished(); done = false;
+      }
+    }
+
+    [sub.S_WL] {
+      [wl_idle] on batch.start(): {
+        wl_idle = false;
+        wl_f();
+      }
+    }
+    [sub.S_PPU] {
+      [ppu_state.PREPARING] {
+          on loadport.ready(),robot.ready():{ppu_state = PP_STATE.PREPARING_CONT;}
+      }
+      [ppu_state.PREPARING_CONT] {
+          on loadport.ready(),robot.ready():{ppu_state = PP_STATE.LOADING; prealigner.prepare();}
+      }
+      [ppu_state.LOADING] {
+        on prealigner.ready(): {
+        	ppu_state = PP_STATE.IDLE; loadport.finish(); robot.finish(); prealigner.finish(); wl_f(); restart();
+        }
+      }
+    }
+
+    [sub.S_UPP] {
+      [upp_state.PREPARING] {
+          on prealigner.ready(),robot.ready():{upp_state = PP_STATE.PREPARING_CONT;}
+      }
+      [upp_state.PREPARING_CONT] {
+          on prealigner.ready(),robot.ready():{upp_state = PP_STATE.LOADING; loadport.prepare();}
+      }
+      [upp_state.LOADING] {
+        on loadport.ready(): {upp_state = PP_STATE.IDLE; prealigner.finish(); robot.finish(); loadport.finish(); wl_f(); restart();}
+      }
+    }
+  }
+}
