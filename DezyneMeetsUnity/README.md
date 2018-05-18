@@ -12,4 +12,3 @@
 |---|---|
 | Dezyne Socket Server | [/DezyneSocketServer](https://github.com/dezyne/community/tree/master/DezyneMeetsUnity/DezyneSocketServer) |
 | Tutorial | [/Tutorial](https://github.com/dezyne/community/tree/master/DezyneMeetsUnity/Tutorial) |
-| 
