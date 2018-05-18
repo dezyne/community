@@ -41,3 +41,7 @@ The super state machine can be initialized to its Idle state and is then recepti
 ![](images/ssm.png)
 
 An UML like diagram would look like this. Notice that the Reflector port is only an implementation detail and not relevant in the design of the state machine hierarchy.
+
+
+## Waferhandler example
+This 2nd example shows how shared resources can be handled in substatemachines. The parts belonging to the substatemachines are identified by prefixes
