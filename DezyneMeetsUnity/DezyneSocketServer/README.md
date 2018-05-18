@@ -1,0 +1,1 @@
+Solution containing the libraries for setting up a server and the communication to Unity. DMUNetworkData contains the network data and DezyneSocketThread contains the communication classes. DezyneSocketServerUI is a test project to run a server with UI, rather than using command line.
