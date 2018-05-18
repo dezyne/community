@@ -2,7 +2,7 @@
 
 ## Documentation
 
-* [Tutorial](https://github.com/dezyne/community/tree/master/DezyneMeetsUnity/Tutorial-Begin.md)
+* [Tutorial](https://github.com/dezyne/community/tree/master/DezyneMeetsUnity/Tutorial/Tutorial-Begin.md)
 * [Unity Package](https://github.com/dezyne/community/tree/master/DezyneMeetsUnity/DMUnity.md)
 * [Network Library](https://github.com/dezyne/community/tree/master/DezyneMeetsUnity/DMUNetworkData.md)
 
