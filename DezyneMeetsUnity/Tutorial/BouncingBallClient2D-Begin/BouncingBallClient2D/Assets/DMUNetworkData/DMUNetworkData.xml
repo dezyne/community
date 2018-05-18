@@ -1,0 +1,162 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>DMUNetworkData</name>
+    </assembly>
+    <members>
+        <member name="T:DMUNetworkData.MessageTypeException">
+            <summary>
+            Exception thrown when a NetworkMessage can not be deserialized to it's expected type.
+            </summary>
+        </member>
+        <member name="M:DMUNetworkData.MessageTypeException.#ctor(System.String)">
+            <summary>
+            Instantiates a new message type exception with the given message.
+            </summary>
+            <param name="message">Exception message</param>
+        </member>
+        <member name="M:DMUNetworkData.MessageTypeException.#ctor">
+            <summary>
+            Instantiates a new message type exception.
+            </summary>
+        </member>
+        <member name="T:DMUNetworkData.NetworkMessage">
+            <summary>
+            Json.NET is used for the (de)serialization. See: https://www.newtonsoft.com/json
+            See DMUNetworkData.md for information regarding this file.
+            </summary>
+        </member>
+        <member name="P:DMUNetworkData.NetworkMessage.ObjectType">
+            <summary>
+            Type of the serialized object. Allows polymorphism through reflection.
+            See: <seealso cref="M:System.Type.GetType(System.String)"/> and <seealso cref="M:System.Object.GetType"/>.
+            </summary>
+        </member>
+        <member name="T:DMUNetworkData.NetworkMessage.NetworkMessageType">
+            <summary>
+            Network message type. Represents if a NetworkMessage is sent or received.
+            </summary>
+        </member>
+        <member name="P:DMUNetworkData.NetworkMessage.MessageType">
+            <summary>
+            Gets the message type. This indicates whether the message was sent or received.
+            Deserialized messages are marked as <see cref="F:DMUNetworkData.NetworkMessage.NetworkMessageType.Received"/>, and constructed messages are marked as <see cref="F:DMUNetworkData.NetworkMessage.NetworkMessageType.Sent"/>.
+            </summary>
+        </member>
+        <member name="P:DMUNetworkData.NetworkMessage.Timestamp">
+            <summary>
+            The time at which this object was initialized (usually directly after receiving it).
+            </summary>
+        </member>
+        <member name="P:DMUNetworkData.NetworkMessage.MessageId">
+            <summary>
+            The ID of the message, if defined by the sending side.
+            If not set, will default to -1.
+            </summary>
+        </member>
+        <member name="P:DMUNetworkData.NetworkMessage.Message">
+            <summary>
+            Data message. Can be used to transmit or receive a single message, or add a description to data.
+            </summary>
+        </member>
+        <member name="P:DMUNetworkData.NetworkMessage.Sender">
+            <summary>
+             Gets the sender of this message. May be null.
+             If set, this should be the Dezyne path to the component.
+            </summary>
+        </member>
+        <member name="P:DMUNetworkData.NetworkMessage.Receiver">
+            <summary>
+            Gets the supposed receiver of this message. May be null.
+            If set, this should be the Dezyne path to the component.
+            </summary>
+        </member>
+        <member name="P:DMUNetworkData.NetworkMessage.Data">
+            <summary>
+            Data storage. Can be used to serialize custom data.
+            It is recommended to make derived classes, rather than using this property.
+            </summary>
+        </member>
+        <member name="M:DMUNetworkData.NetworkMessage.#ctor(System.Int32)">
+            <summary>
+            Initializes a new empty network message with a <see cref="P:DMUNetworkData.NetworkMessage.MessageId"/>.
+            The message will be marked as <see cref="F:DMUNetworkData.NetworkMessage.NetworkMessageType.Sent"/>.
+            </summary>
+            <param name="messageId">Id of the message.</param>
+        </member>
+        <member name="M:DMUNetworkData.NetworkMessage.#ctor">
+            <summary>
+            Initializes a new empty network message without a <see cref="P:DMUNetworkData.NetworkMessage.MessageId"/>.
+            </summary>
+        </member>
+        <member name="M:DMUNetworkData.NetworkMessage.OnSerializing(System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Adds the assembly qualified object type name, so that the data can be serialized to derived classes as well.
+            </summary>
+        </member>
+        <member name="M:DMUNetworkData.NetworkMessage.OnDeserializing(System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Sets the time this message was deserialized.
+            This represents the time the message was received and deserialized, not the time the message was sent.
+            </summary>
+        </member>
+        <member name="M:DMUNetworkData.NetworkMessage.OnDeserialized(System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Sets the message type to received. The assumption is made that all deserialized messages are received, because serializing and deserializing data you own doesn't make a lot of sense.
+            </summary>
+        </member>
+        <member name="T:DMUNetworkData.NetworkMessageReader">
+            <summary>
+            Class used for converting Json NetworkMessage data to actual NetworkMessage objects.
+            </summary>
+        </member>
+        <member name="M:DMUNetworkData.NetworkMessageReader.Deserialize(System.String)">
+            <summary>
+            Deserializes the network message to a (sub-type of) <see cref="T:DMUNetworkData.NetworkMessage"/>.
+            </summary>
+            <param name="json">Network message.</param>
+            <returns>Deserialized network message.</returns>
+        </member>
+        <member name="M:DMUNetworkData.NetworkMessageReader.Deserialize``1(System.String)">
+            <summary>
+            Deserializes the network message to the given type.
+            Type must inherit <see cref="T:DMUNetworkData.NetworkMessage"/>.
+            </summary>
+            <typeparam name="T">NetworkMessage Type</typeparam>
+            <param name="json">NNetwork message.</param>
+            <returns>Deserialized network message to <paramref name="T"/>.</returns>
+        </member>
+        <member name="M:DMUNetworkData.NetworkMessageReader.GetMessageType(Newtonsoft.Json.Linq.JObject)">
+            <summary>
+            Gets the message type of the network message object. All loaded assemblies are checked.
+            </summary>
+            <param name="messageObject">Network Message object.</param>
+            <returns>Type of the network message.</returns>
+            <exception cref="T:DMUNetworkData.MessageTypeException">Thrown if the object type could not be found, or is not defined.</exception>
+        </member>
+        <member name="M:DMUNetworkData.NetworkMessageReader.GetMessageType(System.String)">
+            <summary>
+            Gets the message type of the network message. All loaded assemblies are checked.
+            </summary>
+            <param name="json">Serialized network message in Json.</param>
+            <returns>Type of the network message.</returns>
+            <exception cref="T:DMUNetworkData.MessageTypeException">Thrown if the object type could not be found, or is not defined.</exception>
+        </member>
+        <member name="M:DMUNetworkData.NetworkMessageReader.GetSafeMessageType(Newtonsoft.Json.Linq.JObject)">
+            <summary>
+            Gets the message type of the network message object. All loaded assemblies are checked.
+            If the type could not be found, <see cref="T:DMUNetworkData.NetworkMessage"/> is returned instead.
+            </summary>
+            <param name="messageObject">Network Message object.</param>
+            <returns>Type of the network message.</returns>
+        </member>
+        <member name="M:DMUNetworkData.NetworkMessageReader.GetSafeMessageType(System.String)">
+            <summary>
+            Gets the message type of the network message. All loaded assemblies are checked.
+            If the type could not be found, <see cref="T:DMUNetworkData.NetworkMessage"/> is returned instead.
+            </summary>
+            <param name="json">Serialized network message in Json.</param>
+            <returns>Type of the network message.</returns>
+        </member>
+    </members>
+</doc>
