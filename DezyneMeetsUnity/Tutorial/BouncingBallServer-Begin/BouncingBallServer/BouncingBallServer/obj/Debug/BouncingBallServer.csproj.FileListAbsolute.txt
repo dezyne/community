@@ -1,0 +1,13 @@
+D:\Users\Cas\Documents\Visual Studio 2017\Projects\BouncingBallServer\BouncingBallServer\obj\Debug\BouncingBallServer.csprojResolveAssemblyReference.cache
+D:\Users\Cas\Documents\Visual Studio 2017\Projects\BouncingBallServer\BouncingBallServer\bin\Debug\BouncingBallServer.exe.config
+D:\Users\Cas\Documents\Visual Studio 2017\Projects\BouncingBallServer\BouncingBallServer\bin\Debug\BouncingBallServer.exe
+D:\Users\Cas\Documents\Visual Studio 2017\Projects\BouncingBallServer\BouncingBallServer\bin\Debug\BouncingBallServer.pdb
+D:\Users\Cas\Documents\Visual Studio 2017\Projects\BouncingBallServer\BouncingBallServer\bin\Debug\DezyneSocketThread.dll
+D:\Users\Cas\Documents\Visual Studio 2017\Projects\BouncingBallServer\BouncingBallServer\bin\Debug\DMUNetworkData.dll
+D:\Users\Cas\Documents\Visual Studio 2017\Projects\BouncingBallServer\BouncingBallServer\bin\Debug\Newtonsoft.Json.dll
+D:\Users\Cas\Documents\Visual Studio 2017\Projects\BouncingBallServer\BouncingBallServer\bin\Debug\DezyneSocketThread.pdb
+D:\Users\Cas\Documents\Visual Studio 2017\Projects\BouncingBallServer\BouncingBallServer\bin\Debug\DMUNetworkData.pdb
+D:\Users\Cas\Documents\Visual Studio 2017\Projects\BouncingBallServer\BouncingBallServer\bin\Debug\DMUNetworkData.xml
+D:\Users\Cas\Documents\Visual Studio 2017\Projects\BouncingBallServer\BouncingBallServer\bin\Debug\Newtonsoft.Json.xml
+D:\Users\Cas\Documents\Visual Studio 2017\Projects\BouncingBallServer\BouncingBallServer\obj\Debug\BouncingBallServer.exe
+D:\Users\Cas\Documents\Visual Studio 2017\Projects\BouncingBallServer\BouncingBallServer\obj\Debug\BouncingBallServer.pdb
