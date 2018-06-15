@@ -48,3 +48,6 @@ This is the exhaustive list of Armour patterns separated in armouring either a p
 *	Range error in function parameter in/out-event => events cannot have control parameters
 *	Missing in-event => occurrence of an in-event cannot be enforced
 *	Reply value conflicts in out-events => out-events can only return void
+
+## Combinations of armours
+In case a strict interface has multiple conditions which a native component might violate it is necessary to build an armour that is a mixture of several of these patterns. This might result in rather complex code. A simplictic but also very effective approach might be to put the various armours in a sequential fashion where the transformation from strict to robust interface (and vice versa) is achieved in steps.
