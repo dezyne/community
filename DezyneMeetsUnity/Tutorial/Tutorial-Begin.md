@@ -64,17 +64,10 @@ If you already have Unity set up, you may skip this.
 
 ## Sources
 
-To get started, you can download the **Server Startup** and **Client Startup** sources from the below table. Make sure to unpack the downloaded zip files before using any of the files.
-
 The tutorial does not cover creating scenes and moving objects in Unity, so the Client Startup project should be used as a base.  
 You can choose to start with the Server Startup project, but you can also make a new application. The tutorial covers everything needed to do that.
 
-| Download | Description |
-|---|---|
-| [Server Startup](https://github.com/dezyne/community/DezyneMeetsUnity/Tutorial/BouncingBallServer2D-Begin) | Contains the Dezyne Runtime files and generated Dezyne model. JSON.Net can be installed using NuGet Package Restore. `Program.cs` still needs to be coded. |
-| [Client Startup](https://github.com/dezyne/community/DezyneMeetsUnity/Tutorial/BouncingBallClient2D-Begin) | Contains the scene and components Unity uses. Does not contain the needed libraries nor any code related to the Dezyne integration. |
-| [Final Server](https://github.com/dezyne/community/DezyneMeetsUnity/Tutorial/BouncingBallServer2D-Final) | A working version of the Bouncing Ball Server. |
-| [Final Client](https://github.com/dezyne/community/DezyneMeetsUnity/Tutorial/BouncingBallServer2D-Final) | A working version of the Bouncing Ball Client. |
+Full sources of the LegoBallSorter application can be obtained from Verum (support@verum.com)
 
 Documents we recommend reading:
 
