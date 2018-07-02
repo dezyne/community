@@ -80,8 +80,8 @@ Documents we recommend reading:
 
 | Link | Description |
 |---|---|
-| [DMUnity](DMUnity.md) | More detailed information about the DMUnity (DezyneMeetsUnity) package for Unity. Contains information on how to use all of the components, and how to write your own code that interacts with these components. |
-| [DMUNetworkData](DMUNetworkData.md) | Information on the DMUNetworkData library, which is used to send and receive network messages. Describes the actual serialized message format, and shows how you could make derived network messages for custom data. |
+| [DMUnity](https://github.com/dezyne/community/DezyneMeetsUnity/DMUnity.md) | More detailed information about the DMUnity (DezyneMeetsUnity) package for Unity. Contains information on how to use all of the components, and how to write your own code that interacts with these components. |
+| [DMUNetworkData](https://github.com/dezyne/community/DezyneMeetsUnity/DMUNetworkData.md) | Information on the DMUNetworkData library, which is used to send and receive network messages. Describes the actual serialized message format, and shows how you could make derived network messages for custom data. |
 
 ## Tutorial
 
