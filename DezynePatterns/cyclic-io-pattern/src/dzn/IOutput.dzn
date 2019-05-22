@@ -1,0 +1,14 @@
+
+/**
+ * Output interface.
+ */
+interface IOutput
+{
+  in void high();
+  in void low();
+  
+  behaviour
+  {
+    on high, low : {}
+  }
+}

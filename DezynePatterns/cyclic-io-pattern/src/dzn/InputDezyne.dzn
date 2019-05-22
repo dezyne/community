@@ -1,0 +1,65 @@
+import IInput.dzn;
+import ITrigger.dzn;
+
+/**
+ * Interface to read an input into the dezyne model.
+ */
+interface IIO
+{
+  in bool getValue();
+
+  behaviour
+  {
+    on getValue: reply(true);
+    on getValue: reply(false);
+  }
+}
+
+component InputController
+{
+  provides IInput api;
+  requires ITrigger trigger;
+  requires IIO io;
+
+  behaviour
+  {
+    IInput.eState state = IInput.eState.idle;
+    bool value = false;
+
+    [state.idle]
+    {
+      on api.activate(): state = IInput.eState.active;
+      on api.deactivate(): {}
+      on trigger.trigger(): value = io.getValue();
+    }
+    [state.active]
+    {
+      on api.deactivate(): state = IInput.eState.idle;
+      on trigger.trigger():
+      {
+        bool newVal = io.getValue();
+        if (newVal != value)
+        {
+          value = newVal;
+          api.changed();
+        }
+      }
+    }
+    on api.getValue(): reply(value);
+  }
+}
+
+component InputDezyne
+{
+  provides IInput api;
+  requires IIO input;
+
+  system
+  {
+    Trigger trigger;
+    InputController control;
+    api <=> control.api;
+    trigger.api <=> control.trigger;
+    input <=> control.io;
+  }
+}

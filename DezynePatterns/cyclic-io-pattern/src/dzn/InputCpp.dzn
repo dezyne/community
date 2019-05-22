@@ -1,0 +1,12 @@
+
+import IInput.dzn;
+import ITrigger.dzn;
+
+/**
+ * C++ hand written implementation for the IInput interface.
+ * All polling is done in C++.
+ */
+component InputCpp
+{
+  provides IInput api;
+}

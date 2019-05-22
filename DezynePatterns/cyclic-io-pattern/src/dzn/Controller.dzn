@@ -1,0 +1,87 @@
+
+import IInput.dzn;
+import IOutput.dzn;
+import InputCpp.dzn;
+import InputDezyne.dzn;
+/**
+ * Controller component for demo.
+ */
+interface IStart
+{
+  in void start();
+  
+  behaviour
+  {
+    on start : {}
+  }
+}
+/**
+ * Controller taking two inputs. If both inputs are high, the output will be set to high.
+ */
+component Controller
+{
+  provides IStart api;
+  
+  requires IInput cpp;
+  requires IOutput io;
+  requires IInput slow;
+  behaviour
+  {
+    enum eState {
+      idle,
+      active
+    };
+    
+    eState state = eState.idle;
+    
+    on api.start() : {
+      [state.idle] {
+        state = eState.active;
+        slow.activate();
+        cpp.activate();
+      }
+      [otherwise] {}
+    }
+    
+    void eval()
+    {
+      bool cppVal = cpp.getValue();
+      bool slowVal = slow.getValue();
+      
+      if (cppVal && slowVal)
+      {
+        io.high();
+      }
+      else
+      {
+        io.low();
+      }
+    }
+    
+    [state.active]
+    {
+      on slow.changed(), cpp.changed() : eval();
+    }
+  }
+}
+
+component ControlSystem
+{
+  provides IStart api;
+  
+  requires IOutput io;
+  
+  requires IIO input;
+  system
+  {
+    Controller control;
+    InputDezyne dezyne;
+    InputCpp cpp;
+    
+    api <=> control.api;
+    io <=> control.io;
+    control.cpp <=> cpp.api;
+    input <=> dezyne.input;
+    control.slow <=> dezyne.api;
+  }
+}
