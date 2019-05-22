@@ -1,0 +1,46 @@
+
+/**
+ * Digital input interface.
+ */
+interface IInput
+{
+  in void activate();
+  in void deactivate();
+  in bool getValue();
+  out void changed();
+  enum eState {idle, active};
+  enum eIO {high, low};
+
+  behaviour
+  {
+    eState state = eState.idle;
+    eIO io = eIO.high;
+
+    [state.idle]
+    {
+      on activate:
+      {
+        [true] {state = eState.active; io = eIO.low;}
+        [true] {state = eState.active; io = eIO.high;}
+      }
+      on deactivate: {}
+      on getValue: reply(false);
+      on getValue: reply(true);
+    }
+    [state.active]
+    {
+      on deactivate: state = eState.idle;
+      on activate: illegal;
+      on getValue:
+      {
+        [io.low] reply(false);
+        [io.high] reply(true);
+      }
+      on optional:
+      {
+        [io.low] {changed; io = eIO.high;}
+        [io.high] {changed; io = eIO.low;}
+      }
+    }
+  }
+}

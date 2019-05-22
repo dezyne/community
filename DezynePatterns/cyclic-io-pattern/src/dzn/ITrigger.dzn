@@ -1,0 +1,18 @@
+
+/**
+ * The trigger is called from the cpp on every cycle to be able to check things.
+ */
+interface ITrigger
+{
+  out void trigger();
+
+  behaviour
+  {
+    on inevitable: trigger;
+  }
+}
+
+component Trigger
+{
+  provides ITrigger api;
+}
