@@ -38,7 +38,7 @@ The implementation of the iterator is in hand-written code.
 Objects could be retained in a linked list where the identifier is a pointer (or handle) to the object in the list.
 Alternatively it could be an array with the index number as identifier.
 
-an example of a tail recursive function in Dezyne:
+An example of a tail recursive function in Dezyne:
 ```cpp
 void initObjects() {
 	string id;
