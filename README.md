@@ -14,11 +14,11 @@ First of all, see https://www.verum.com/support/tutorials/ for the online tutori
 
 # Dezyne meets Unity
 
-[The Errors and armours page](https://github.com/VerumSoftwareTools/DezyneCommunity/tree/master/DezynemeetsUnity) describes a tutorial for building a link between a controlling server in dezyne and a client in Unity (3D virtualization platform).
+[DezyneMeetsUnity](https://github.com/VerumSoftwareTools/DezyneCommunity/tree/master/DezyneMeetsUnity) describes a tutorial for building a link between a controlling server in dezyne and a client in Unity (3D virtualization platform).
 
 # DezynePatterns
 
-[The Errors and armours page](https://github.com/VerumSoftwareTools/DezyneCommunity/tree/master/DezynePatterns) describes some standard designer challenges and how to solve those in Dezyne. This is inspired by the famous DesignPatterns of Object Oriented Design.
+[DezynePatterns](https://github.com/VerumSoftwareTools/DezyneCommunity/tree/master/DezynePatterns) describes some standard designer challenges and how to solve those in Dezyne. This is inspired by the famous DesignPatterns of Object Oriented Design.
 
 # SubState Machines
 
