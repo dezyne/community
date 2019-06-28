@@ -10,7 +10,7 @@ First of all, see https://www.verum.com/support/tutorials/ for the online tutori
 
 # Armours
 
-[The Errors and armours page](https://github.com/VerumSoftwareTools/DezyneCommunity/tree/master/Error_situations_and_armours) describes error situations for which armouring could be applied and provides examples of such Armours. By now this information has become part of a tutorial at the Verum Website so you can find the latest status there.
+[The Errors and armours page](https://github.com/VerumSoftwareTools/DezyneCommunity/tree/master/Error_situations_and_armours) describes error situations for which armouring could be applied and provides examples of such Armours. By now this information has become part of a tutorial at the Verum website so you can find the latest status there.
 
 # Dezyne meets Unity
 
