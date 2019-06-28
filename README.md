@@ -10,11 +10,11 @@ First of all, see https://www.verum.com/support/tutorials/ for the online tutori
 
 # Armours
 
-[The Errors and armours page](https://github.com/VerumSoftwareTools/DezyneCommunity/tree/master/Error_situations_and_armours) describes error situations for which armouring could be applied and provides examples of such Armours.
+[The Errors and armours page](https://github.com/VerumSoftwareTools/DezyneCommunity/tree/master/Error_situations_and_armours) describes error situations for which armouring could be applied and provides examples of such Armours. By now this information has become part of a tutorial at the Verum Website so you can find the latest status there.
 
 # Dezyne meets Unity
 
-[DezyneMeetsUnity](https://github.com/VerumSoftwareTools/DezyneCommunity/tree/master/DezyneMeetsUnity) describes a tutorial for building a link between a controlling server in dezyne and a client in Unity (3D virtualization platform).
+[DezyneMeetsUnity](https://github.com/VerumSoftwareTools/DezyneCommunity/tree/master/DezyneMeetsUnity) describes a tutorial for building a link between a controlling server in Dezyne and a client in Unity (3D virtualization platform) communicating via Websockets.
 
 # DezynePatterns
 
