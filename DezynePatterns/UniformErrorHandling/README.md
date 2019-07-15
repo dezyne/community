@@ -1,0 +1,69 @@
+# Uniform error reporting and recovery pattern
+
+Architectural pattern enabling uniform treatment of a group of requires ports in case one of the requires ports has reported an error.
+    
+## Justification
+Error handling behaviour tends to complicate models and to distract from functional behaviour. Error handling behaviour can easily outgrow functional behaviour. A uniform policy for the error and recovery behaviour facet of fallible components can help to
+1. minimize size and complexity of error handling behaviour, and
+2. separate error handling behaviour from functional behaviour.
+    
+## Disclaimer
+This article provides an EXAMPLE of an interface behaviour pattern. It might not meet all requirements for all applications. It serves to inspire and should not be followed dogmatically.
+    
+## High-level approach
+An 'error' event is sent by a component when it is no longer capable of performing its normal operation. In order to restore normal operational capability the client component shall perform the following procedure:
+1. Ensure component is no longer perfoming actions: call 'stop' and wait for the 'stopped' event;
+2. Make component recover from the error: call 'recover' and wait for the 'recovered' event.
+    
+## Key elements in uniform error handling
+1. The 'stop' event is handled even in the 'Idle' state.
+2. The 'recover' event is handled even when component is functioning normally, i.e. faulty == false.
+
+These two aspects allow components to maintain a minimal amount of state administration about its requires ports. As soon as one of the requires ports reports an error the component can recover from the error by subsequently stopping and recovering all requires ports. This recovery behaviour can largely be kept separate from the operational behaviour.
+
+```cpp
+interface IFallible {
+  // events related to error handling
+  out void error();
+  in void recover();
+  out void recovered();
+
+  // events related to normal operation and to error handling   
+  in void stop();
+  out void stopped();
+
+  // example events related to normal operation
+  in void start();
+  out void done();
+   
+  enum OperationalState {Idle, Busy, Stopping, Recovering};
+   
+  behaviour {
+    OperationalState os = OperationalState.Idle;
+    bool faulty = false;
+     
+    [os.Idle] {
+    	on start: os = OperationalState.Busy;
+    	on start: [faulty] illegal;
+    	on stop: os = OperationalState.Stopping;
+      on recover: os = OperationalState.Recovering;
+    }
+    [os.Busy] {
+    	on start: illegal;
+      on stop: os = OperationalState.Stopping;
+    	on recover: illegal;
+      on inevitable: {error; faulty = true;}
+      on inevitable: {done; os = OperationalState.Idle;}
+    }
+    [os.Stopping] {
+      on start, stop, recover: illegal;
+      on inevitable: {stopped; os = OperationalState.Idle;}
+    }
+    [os.Recovering] {
+    	on start, stop, recover: illegal;
+      on inevitable: {recovered; os = OperationalState.Idle; faulty = false;}
+      on inevitable: {error; os = OperationalState.Idle; faulty = true;}
+    }
+  }
+}
+```
