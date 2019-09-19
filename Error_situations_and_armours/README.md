@@ -1,3 +1,5 @@
+The information in this directory has been incorporated in an official tutorial at the Verum website and is not actively manintained anymore
+
 # Armouring patterns
 
 An Armour protects a system built in Dezyne during runtime against interface violations by native code. Between Dezyne components such violations can never occur after passing the verification. The integration with native code cannot be formally verified and hence the native code could be misbehaving. Typically if the native code is not fully understood it may be suspected of not being fully interface compliant.
