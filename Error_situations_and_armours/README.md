@@ -1,4 +1,4 @@
-The information in this directory has been incorporated in an official tutorial at the Verum website and is not actively manintained anymore
+The information in this directory has been incorporated in an official tutorial at the Verum website and is not actively maintained anymore
 
 # Armouring patterns
 
