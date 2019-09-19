@@ -1,0 +1,103 @@
+import button.dzn;
+
+interface IButtonLed {
+	in void start();
+	in void stop();
+
+	behaviour {
+		enum State { Idle, Running };
+		State state = State.Idle;
+		
+		[state.Idle] {
+			on start: state = State.Running;
+			on stop: {}
+		}
+		[state.Running] {
+			on start: illegal;
+			on stop: state = State.Idle;
+		}		
+	}	
+}
+
+component ButtonLed {
+	provides IButtonLed api;	
+	requires IButton button;
+	requires ILedGlue led;
+	
+	behaviour {
+		enum State { Idle, Starting, Released, Pressed };
+		State state = State.Idle;
+		
+		[state.Idle] {
+			on api.start(): {
+				button.start();
+				led.turnOff();
+				state = State.Starting;
+			}
+			on api.stop(): {}
+		}
+		[state.Starting] {
+			on api.stop(): {
+				button.stop();
+				state = State.Idle;
+			}
+			on button.turnedOn(): {
+				led.turnOn();
+				state = State.Pressed;
+			}			
+			on button.turnedOff(): {
+				state = State.Released;
+			}
+		}
+		[state.Pressed] {
+			on api.stop(): {
+				button.stop();
+				led.turnOff();
+				state = State.Idle;
+			}					
+			on button.turnedOff(): {
+				led.turnOff();
+				state = State.Released;
+			}						
+		}
+		[state.Released] {
+			on api.stop(): {
+				button.stop();
+				state = State.Idle;
+			}
+			on button.turnedOn(): {
+				led.turnOn();
+				state = State.Pressed;	
+			}			
+		}
+	}	
+}
+
+component LedTestSystem {
+	provides IButtonLed api;
+	requires IButtonGlue buttonGlue;
+	requires ILedGlue ledGlue;
+	
+	system {
+		ButtonLed buttonLed;
+		buttonLed.api <=> api;
+		buttonLed.led <=> ledGlue;
+		
+		Button button;
+		button.api <=> buttonLed.button;
+		button.glue <=> buttonGlue;
+	}
+}
+
+component LedTestSystemInt {
+	provides IButtonLed api;
+	requires IButton button;
+	requires ILedGlue ledGlue;
+	
+	system {
+		ButtonLed buttonLed;
+		buttonLed.api <=> api;
+		buttonLed.led <=> ledGlue;
+		buttonLed.button <=> button;
+	}
+}

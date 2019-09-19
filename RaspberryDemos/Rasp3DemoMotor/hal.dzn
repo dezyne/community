@@ -1,0 +1,103 @@
+extern int $int$;
+extern double $double$;
+extern seconds $double$;
+
+interface IButtonGlue {
+	enum State { On, Off };
+
+	in State get();
+	
+	behaviour {
+		on get: reply(State.On);
+		on get: reply(State.Off);
+	}
+}
+
+component ButtonGlue {
+	provides IButtonGlue api;
+}
+
+interface ILedGlue {		
+	in void turnOn();
+	in void turnOff();
+	
+	behaviour {
+		enum State { On, Off };
+		State state = State.Off;
+		
+		[state.Off]	{
+			on turnOn: state = State.On;
+			on turnOff: {}			
+		}
+		[state.On] {
+			on turnOn: illegal;
+			on turnOff: state = State.Off;
+		}
+	}
+}
+
+component LedGlue {
+	provides ILedGlue api;
+}
+
+interface IMotorGlue {	
+	in void speedUp();
+	in void speedDown();
+	in void forward();
+	in void backward();
+	
+	behaviour {
+		on speedUp: {}
+		on speedDown: {}
+		on forward: {}
+		on backward: {}
+	}
+}
+
+component MotorGlue {
+	provides IMotorGlue api;
+}
+
+interface IEncoderGlue {
+	enum Dir { CW, CCW };
+	
+	in void position(out int position);
+	in Dir direction();
+	
+	behaviour {
+		on position: {}
+		on direction: reply(Dir.CW);
+		on direction: reply(Dir.CCW);
+	}	
+}
+
+component EncoderGlue {
+	provides IEncoderGlue api;
+}
+
+interface ITimer {
+	in void create(int miliseconds);
+	in void cancel();
+	out void timeout();
+
+	behaviour {
+		bool is_armed = false;
+
+		on cancel: is_armed = false;
+
+		[!is_armed] {
+			on create: is_armed = true;
+		}
+		[is_armed] {
+			on create: illegal;
+			on inevitable: {
+				timeout; 
+				is_armed = false;
+			}
+		}
+	}
+}
+
+component Timer {
+	provides ITimer api;
+}

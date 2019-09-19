@@ -1,0 +1,109 @@
+import hal.dzn;
+
+interface IButton {
+	in void start();
+	in void stop();
+	out void turnedOn();
+	out void turnedOff();
+	
+	behaviour {
+		enum State { Idle, Starting, On, Off };
+		State state = State.Idle;
+		
+		[state.Idle] {
+			on start: state = State.Starting;
+			on stop: {}
+		}
+		[state.Starting] {
+			on start: illegal;
+			on stop: state = State.Idle;
+			on inevitable: { turnedOn; state = State.On; }			
+			on inevitable: { turnedOff; state = State.Off; }
+		}
+		[state.Off] {
+			on start: illegal;
+			on stop: state = State.Idle;
+//(2) COMMENT next statement to cause method not allowed by port error in verifier
+			on inevitable: { turnedOn; state = State.On; }
+			
+		}		
+		[state.On] {
+			on start: illegal;
+			on stop: state = State.Idle;
+			on inevitable: { turnedOff; state = State.Off; }
+		}
+	}
+}
+
+component ButtonImpl {
+	provides IButton api;
+	requires IButtonGlue glue;
+	requires ITimer timer;
+	
+	behaviour {
+		enum State { Idle, Starting, On, Off };
+		State state = State.Idle;
+		int pollDuration = $100$;
+		
+		on api.stop(): {
+//(1) COMMENT next statement to cause illegal error in verifier (create already running Timer)
+			timer.cancel();
+			state = State.Idle;
+		}
+		[state.Idle] {
+			on api.start(): {
+				timer.create(pollDuration);
+				state = State.Starting;
+			}
+		}
+		[state.Starting] {			
+			on timer.timeout(): {
+				timer.create(pollDuration);
+				IButtonGlue.State button = glue.get();
+				if(button.On) {
+					api.turnedOn();
+					state = State.On;
+				}
+				if(button.Off) {
+					api.turnedOff();
+					state = State.Off;					
+				}	
+			}
+		}
+		[state.On] {
+			on timer.timeout(): {
+//(3) COMMENT next statement to cause method not performed by port error in verifier
+				timer.create(pollDuration);				
+				IButtonGlue.State button = glue.get();
+				if(button.Off) {
+					api.turnedOff();
+					state = State.Off;					
+				}					
+			}
+		}
+		[state.Off] {
+			on timer.timeout(): {
+				timer.create(pollDuration);
+				IButtonGlue.State button = glue.get();
+				if(button.On) {
+					api.turnedOn();
+					state = State.On;
+				}
+			}
+		}
+	}
+}
+
+component Button {
+	provides IButton api;
+	requires IButtonGlue glue;
+	
+	system {
+		Timer timer;
+		ButtonImpl impl;
+		impl.api <=> api;
+		impl.glue <=> glue;
+		
+		timer.api <=> impl.timer;
+	}
+}

@@ -1,0 +1,142 @@
+import button.dzn;
+
+interface IMotorControl {
+	in void start();
+	in void stop();
+	out void speedUp();
+	out void speedDown();
+
+	behaviour {
+		enum State { Idle, Running };
+		State state = State.Idle;
+		speedrange speed = 0;
+		
+		[state.Idle] {
+			on start: state = State.Running;
+			on stop: {}
+		}
+		[state.Running] {
+			on start: illegal;
+			on stop: state = State.Idle;
+			[speed < 5] on inevitable: {speedUp; speed = speed+1;}
+			[speed > 0] on inevitable: {speedDown; speed = speed-1;}
+		}		
+	}	
+}
+
+subint speedrange{0..5};
+
+component MotorControl {
+	provides IMotorControl api;	
+	requires IButton toggle;
+	requires IButton speedup;
+	requires IButton speeddown;
+	requires ITimer	timer;
+	requires IMotorGlue device;
+	
+	behaviour {
+		speedrange targetSpeed = 0;
+		speedrange actualSpeed = 0;
+	
+		enum State { Idle, Running};
+		State state = State.Idle;
+		bool targetForward = true;
+		bool actualForward = true;
+		int timertick = $2000$;
+		
+		[state.Idle] {
+			on api.start(): {
+				timer.create(timertick); state = State.Running;
+				toggle.start();
+				speedup.start();
+				speeddown.start();
+			}
+//(3) COMMENT next line to cause implicit illegal in verifier
+			on api.stop(): {}
+			on toggle.turnedOn(): {}
+			on speedup.turnedOn(): {}
+			on speeddown.turnedOn(): {}
+		}
+		[state.Running] {
+			on api.stop(): {
+				timer.cancel(); state = State.Idle;
+				toggle.stop();
+				speedup.stop();
+				speeddown.stop();	
+			}
+			on toggle.turnedOn(): {
+				if (targetForward == actualForward)
+					targetForward = !targetForward;
+				// ignore otherwise (so complete earlier direction change first)
+			}
+			on speedup.turnedOn(): {
+//(1) COMMENT next statement to cause range error in verifier
+				if (targetSpeed < 5)
+					targetSpeed = targetSpeed + 1;
+			}
+			on speeddown.turnedOn(): {
+				if (targetSpeed > 0)
+					targetSpeed = targetSpeed - 1;
+			}
+			on timer.timeout(): {
+				timer.create(timertick);
+				if (targetForward == actualForward) {
+					if (actualSpeed < targetSpeed) {
+//(2a) COMMENT next statement to cause method not allowed by port error in verifier
+						actualSpeed = actualSpeed + 1;
+						device.speedUp(); api.speedUp();
+					}
+					else if (actualSpeed > targetSpeed) {
+						actualSpeed = actualSpeed - 1;
+						device.speedDown();  api.speedDown();
+					}			
+				}
+				else { // towards switching direction
+					if (actualSpeed > 0) {
+						actualSpeed = actualSpeed - 1;
+//(2b) COMMENT next statement to cause method not allowed by port error in verifier						
+						device.speedDown();  api.speedDown();
+					}
+					else if (actualSpeed == 0) {
+						actualForward = !actualForward;
+						if (actualForward)
+							device.forward();
+						else
+							device.backward();
+					}					
+				}
+			}
+		}
+		on toggle.turnedOff(),
+		   speedup.turnedOff(),
+		   speeddown.turnedOff() : {}
+	}
+}
+
+component motorTestSystem{
+	provides IMotorControl api;
+	requires IButtonGlue itoggle;
+	requires IButtonGlue ispeedup;
+	requires IButtonGlue ispeeddown;
+	requires IMotorGlue imotor;
+
+
+	system {
+		MotorControl mc;
+		Button toggle;
+		Button speedup;
+		Timer timer;
+		Button speeddown;
+		
+		api <=> mc.api;
+		imotor <=> mc.device;
+		itoggle <=> toggle.glue;
+		ispeedup <=> speedup.glue;
+		ispeeddown <=> speeddown.glue;
+		mc.toggle <=> toggle.api;
+		mc.speedup <=> speedup.api;
+		mc.speeddown <=> speeddown.api;
+		mc.timer <=> timer.api;
+	}	
+}
+

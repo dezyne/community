@@ -1,0 +1,77 @@
+import motor.dzn;
+
+interface IMotorLed {
+	in void start();
+	in void stop();
+
+	behaviour {
+		enum State { Idle, Running };
+		State state = State.Idle;
+		
+		[state.Idle] {
+			on start: state = State.Running;
+			on stop: {}
+		}
+		[state.Running] {
+			on start: illegal;
+			on stop: state = State.Idle;
+		}		
+	}	
+}
+
+component motorLed {
+	provides IMotorLed iml;
+	requires IMotorControl imotor;
+	requires ILedsGlue ileds;
+	
+	behaviour {
+		enum State { Idle, Running};
+		State state = State.Idle;
+		speedrange lc = 0;
+
+		[state.Idle] {
+			on iml.start(): {imotor.start(); state = State.Running;}
+			on iml.stop(): {}
+		}
+		[state.Running] {
+			on iml.stop(): {imotor.stop(); state = State.Idle;}
+			[lc < 5] on imotor.speedUp(): {
+				lc = lc + 1;
+				if (lc == 4) ileds.led4On();
+				if (lc == 3) ileds.led3On();
+				if (lc == 2) ileds.led2On();
+				if (lc == 1) ileds.led1On();
+			}
+			[lc > 0] on imotor.speedDown(): {
+				if (lc == 4) ileds.led4Off();
+				if (lc == 3) ileds.led3Off();
+				if (lc == 2) ileds.led2Off();
+				if (lc == 1) ileds.led1Off();
+				lc = lc - 1;
+			}
+		// cases like "[lc >= 5 and imotor.speedUp()" will never happen
+		}
+	}	
+}
+
+component motorLedSystem {
+	provides IMotorLed iml;
+	requires IButtonGlue itoggle;
+	requires IButtonGlue ispeedup;
+	requires IButtonGlue ispeeddown;
+	requires IMotorGlue imotor;
+	requires ILedsGlue ileds;
+
+	system {
+		motorTestSystem mts;
+		motorLed ml;
+		
+		iml <=> ml.iml;
+		itoggle <=> mts.itoggle;
+		ispeedup <=> mts.ispeedup;
+		ispeeddown <=> mts.ispeeddown;
+		imotor <=> mts.imotor;
+		ileds <=> ml.ileds;
+		mts.api <=> ml.imotor;
+	}
+}
