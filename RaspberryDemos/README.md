@@ -2,6 +2,7 @@
 
 # Rasp1DemoButton
 The most simple one. Just one button driving one led. The button is polled on a timer interrupt. The timer is instantiated from the Dezyne runtime.
+Verum has a small video on request that guides you through all the steps of integrating the Dezyne code on the Raspberry. 
 
 # Rasp2Demo4Leds
 Similar to the first one but enhanced to 4 leds and 4 buttons.
