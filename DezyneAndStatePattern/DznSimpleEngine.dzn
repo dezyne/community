@@ -1,0 +1,200 @@
+// Example of introducing Dezyne models into code based on the State Pattern.
+// Author: Julien Schmaltz
+// Copyright (c) 2019 ICT Group
+
+// Example is a simple engine that can be started.
+// It has two states: off and on.
+// The start command might fail. 
+// The stop command never fails. 
+
+enum state_t {OFF, ON};
+
+/* SIMPLE ENGINE INTERFACE */
+
+interface IDznSimpleEngine {
+	in bool start();
+	in void stop();
+	
+	behaviour {
+		state_t state = state_t.OFF;
+		
+		[state.OFF] {
+			on start : {
+				state = state_t.ON;
+				reply(true);
+			}
+			on start : {
+				reply(false);
+			}
+			on stop : illegal;
+		}
+		
+		[state.ON] {
+			on start : illegal;
+			on stop : {
+				state = state_t.OFF;
+			}
+		}
+	}
+}
+
+/* ROBUST INTERFACE */
+
+// We introduce a new return type. At the robust level,
+// legal commands can succeed or fail. Illegal command 
+// calls get an Illegal as return value. 
+enum callResult_t {Succeeded, Failed, Illegal};
+
+interface IDznSimpleEngineRobust {
+	in callResult_t start();
+	in callResult_t stop();
+	
+	behaviour {
+		state_t state = state_t.OFF;
+		
+		[state.OFF] {
+			on start : {
+				state = state_t.ON;
+				reply(callResult_t.Succeeded);
+			}
+			on start : {
+				reply(callResult_t.Failed);
+			}
+			on stop : {
+				reply(callResult_t.Illegal);
+			}
+		}
+		
+		[state.ON] {
+			on start : {
+				reply(callResult_t.Illegal);
+			}
+			on stop : {
+				state = state_t.OFF;
+				reply(callResult_t.Succeeded);
+			}
+		}
+	}
+}
+
+/* EXCEPTION HANDLING */
+// To make the example slightly more realistic, 
+// we introduce a component handling errors and exceptions. 
+
+extern String $std::string$;
+
+interface IDznExceptionHandler {
+	in void RaiseException(in String txt);
+	behaviour {
+		on RaiseException : {}
+	}
+}
+
+// Native component realizing the ExceptionHandler interface.
+component DznExceptionHandler {
+	provides IDznExceptionHandler pExceptionHandler;
+}
+
+
+// We are now ready to create the Armour component for the 
+// simple engine interface. 
+component DznSimpleEngineArmour {
+	provides IDznSimpleEngineRobust pSimpleEngineRobust;
+	requires IDznSimpleEngine rSimpleEngine;
+	requires injected IDznExceptionHandler iExceptionHandler;
+	
+	behaviour {
+		state_t state = state_t.OFF;
+		
+		[state.OFF] {
+			on pSimpleEngineRobust.start() : {
+				bool res = rSimpleEngine.start();
+				if (res) {
+					state = state_t.ON;
+					reply(callResult_t.Succeeded);
+				} else {
+					iExceptionHandler.RaiseException($"Start failed !"$);
+					reply(callResult_t.Failed);
+				}
+			}
+			on pSimpleEngineRobust.stop() : {
+				iExceptionHandler.RaiseException($"Illegal stop, start engine first !"$);
+				reply(callResult_t.Illegal);
+			}
+		}
+		
+		[state.ON] {
+			on pSimpleEngineRobust.start() : {
+				iExceptionHandler.RaiseException($"Illegal start, engine already started !"$);
+				reply(callResult_t.Illegal);
+			}
+			on pSimpleEngineRobust.stop() : {
+				rSimpleEngine.stop();
+				state = state_t.OFF;
+				reply(callResult_t.Succeeded);
+			}
+		}
+	}
+}
+
+/* ACTION INTERFACE */
+// This is to model the fact that the computation 
+// done by the engine actions are performed outside 
+// the Dezyne environment. 
+interface IDznEngineActions {
+	in bool StartEngine();
+	in void TurnOffEngine();
+	
+	behaviour {
+		on StartEngine : reply(true);
+		on StartEngine : reply(false);
+		on TurnOffEngine : {}
+	}
+}
+
+component DznEngineActions {
+	provides IDznEngineActions pEngineActions;
+}
+
+/* ENGINE STATE MACHINE */
+
+component DznEngineFSM {
+	provides IDznSimpleEngine pSimpleEngine;
+	requires IDznEngineActions rEngineActions;
+	
+	behaviour {
+		state_t state = state_t.OFF;
+		
+		[state.OFF] {
+			on pSimpleEngine.start() : {
+				bool res = rEngineActions.StartEngine();
+				if (res) state = state_t.ON;
+				reply(res);
+			}
+		}
+		[state.ON] {
+			on pSimpleEngine.stop() : {
+				rEngineActions.TurnOffEngine();
+				state = state_t.OFF;
+			}
+		}
+	}
+}
+
+/* FINAL SYSTEM */
+
+component DznSimpleEngineSystem {
+	provides IDznSimpleEngineRobust pSimpleEngineRobust;
+	
+	system {
+		DznSimpleEngineArmour engineArmour;
+		DznEngineFSM engineFSM;
+		DznExceptionHandler exceptionHandler;
+		DznEngineActions engineActions;
+		
+		engineArmour.pSimpleEngineRobust <=> pSimpleEngineRobust;
+		exceptionHandler.pExceptionHandler <=> *;
+		engineFSM.pSimpleEngine <=> engineArmour.rSimpleEngine;
+		engineFSM.rEngineActions <=> engineActions.pEngineActions;
+	}
+}
