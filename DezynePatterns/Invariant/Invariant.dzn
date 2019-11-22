@@ -1,0 +1,13 @@
+interface Invariant {
+    out void check();
+    in void dummy();
+
+    behaviour {
+        on optional: check;
+        on dummy: {}
+    }
+}
+
+component InvariantDummy {
+    provides Invariant dummy;
+}

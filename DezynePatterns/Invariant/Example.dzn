@@ -1,0 +1,81 @@
+import Invariant.dzn;
+
+interface Timer {
+    extern ms $int$;
+    in void create(ms duration);
+    in void cancel();
+    in bool isArmed();
+    out void timeout();
+
+    behaviour {
+        bool armed = false;
+
+        on isArmed: reply(armed);
+
+        [!armed]
+        {
+            on create: armed = true;
+            on cancel: {}
+        }
+
+        [armed]
+        {
+            on create: illegal;
+            on cancel: armed = false;
+            on inevitable: { timeout; armed = false; }
+        }
+    }
+}
+
+interface Monitor {
+    in void start();
+    in void stop();
+
+    behaviour {
+        bool running = false;
+
+        [!running]
+        {
+            on start: running = true;
+            on stop: {}
+        }
+
+        [running]
+        {
+            on start: illegal;
+            on stop: running = false;
+        }
+    }
+}
+
+component MonitorComponent {
+    provides Monitor api;
+    requires Timer timer;
+    requires Invariant invariant;
+
+    behaviour {
+        bool running = false;
+
+        void assert(bool check)
+        {
+            if(!check) illegal;
+        }
+
+        [!running] {
+            on invariant.check(): {}
+
+            on api.start(): { timer.create($1000$); running = true; }
+            on api.stop(): {}
+        }
+
+        [running] {
+            on invariant.check(): {
+                bool armed = timer.isArmed();
+                assert(armed);
+            }
+
+            on api.stop(): { timer.cancel(); running = false; }
+            on timer.timeout(): { /* do stuff */ }
+        }
+    }
+}
